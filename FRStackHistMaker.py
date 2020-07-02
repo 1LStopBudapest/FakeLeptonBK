@@ -9,6 +9,7 @@ sys.path.append('../')
 from Helper.HistInfo import HistInfo
 from TriggerStudy.TrigVarSel import TrigVarSel
 from Sample.SampleChain import SampleChain
+from Helper.VarCalc import *
 
 def get_parser():
     ''' Argument parser.
@@ -72,9 +73,9 @@ if isinstance(SampleChain.samplelist[samples][0], types.ListType):
             if msrReg and passTrig:
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepid = getSel.getLooseLep(lepOpt)['idx']
-                histos['LepPt_loose'].Fill(lepPt, lumiscale)
+                Fill1D(histos['LepPt_loose'], lepPt, lumiscale)
                 if getSel.loosepasstight(idx, lepOpt):
-                    histos['LepPt_tight'].Fill(lepPt, lumiscale)
+                    Fill1D(histos['LepPt_tight'], lepPt, lumiscale)
         hfile.Write()
 
 else:
@@ -105,8 +106,8 @@ else:
         if msrReg and passTrig:
             lepPt = getSel.getLooseLep(lepOpt)['pt']
             lepid = getSel.getLooseLep(lepOpt)['idx']
-            histos['LepPt_loose'].Fill(lepPt, lumiscale)
+            Fill1D(histos['LepPt_loose'], lepPt, lumiscale)
             if getSel.loosepasstight(idx, lepOpt):
-                histos['LepPt_tight'].Fill(lepPt, lumiscale)
+                Fill1D(histos['LepPt_tight'], lepPt, lumiscale)
 
     hfile.Write()
