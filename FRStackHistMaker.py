@@ -88,7 +88,7 @@ if isinstance(samplelist[samples][0], types.ListType):
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepid = getSel.getLooseLep(lepOpt)['idx']
                 Fill1D(histos['LepPt_loose'], lepPt, lumiscale)
-                if getSel.loosepasstight(idx, lepOpt):
+                if getSel.loosepasstight(lepid, lepOpt):
                     Fill1D(histos['LepPt_tight'], lepPt, lumiscale)
         hfile.Write()
 
@@ -100,7 +100,6 @@ else:
     print 'running over: ', sample
     hfile = ROOT.TFile( 'FRStackHist_'+lepOpt+'_'+sample+'_%i_%i'%(options.startfile+1, options.startfile + options.nfiles)+'.root', 'RECREATE')
     histos = {}
-    ext = sample[0:sample.find('_')] if options.pJobs else sample
     histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
     histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
         
