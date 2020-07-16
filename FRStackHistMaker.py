@@ -10,6 +10,7 @@ from Helper.HistInfo import HistInfo
 from TriggerStudy.TrigVarSel import TrigVarSel
 from Sample.SampleChain import SampleChain
 from Helper.VarCalc import *
+from Sample.FileList_Fake_2016 import samples as samples_2016
 
 def get_parser():
     ''' Argument parser.
@@ -40,21 +41,34 @@ isData = True if ('Run' in samples or 'Data' in samples) else False
 
 lepOpt = 'Ele' if 'Electron' in channel else 'Mu'
 
-DataLumi = SampleChain.luminosity_2016
+DataLumi = 1.0
+
+if year==2016:
+    samplelist = samples_2016
+    DataLumi = SampleChain.luminosity_2016
+elif year==2017:
+    samplelist = samples_2017
+    DataLumi = SampleChain.luminosity_2017
+else:
+    samplelist = samples_2018
+    DataLumi = SampleChain.luminosity_2018
+
 
 ptBinning = [3.5, 5, 12, 20, 30, 50, 80, 200]
 
-if isinstance(SampleChain.samplelist[samples][0], types.ListType):
-    for s in SampleChain.samplelist[samples]:
-        sample = list(SampleChain.samplelist.keys())[list(SampleChain.samplelist.values()).index(s)]
+histext = ''
+
+if isinstance(samplelist[samples][0], types.ListType):
+    histext = samples
+    for s in samplelist[samples]:
+        sample = list(samplelist.keys())[list(samplelist.values()).index(s)]
         print 'running over: ', sample
         hfile = ROOT.TFile( 'FRStackHist_'+lepOpt+'_'+sample+'_%i_%i'%(options.startfile+1, options.startfile + options.nfiles)+'.root', 'RECREATE')
         histos = {}
-        ext = samples[0:samples.find('_')] if options.pJobs else samples
-        histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = ext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-        histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = ext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
+        histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
+        histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
         
-        ch = SampleChain(sample, options.startfile, options.nfiles).getchain()
+        ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
         print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
         n_entries = ch.GetEntries()
         nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
@@ -79,15 +93,18 @@ if isinstance(SampleChain.samplelist[samples][0], types.ListType):
         hfile.Write()
 
 else:
+    histext = samples
+    for l in list(samplelist.values()):
+        if samplelist[samples] in l: histext = list(samplelist.keys())[list(samplelist.values()).index(l)]
     sample = samples
     print 'running over: ', sample
     hfile = ROOT.TFile( 'FRStackHist_'+lepOpt+'_'+sample+'_%i_%i'%(options.startfile+1, options.startfile + options.nfiles)+'.root', 'RECREATE')
     histos = {}
     ext = sample[0:sample.find('_')] if options.pJobs else sample
-    histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = ext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = ext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
+    histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
+    histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
         
-    ch = SampleChain(sample, options.startfile, options.nfiles).getchain()
+    ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
     n_entries = ch.GetEntries()
     nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
@@ -107,7 +124,7 @@ else:
             lepPt = getSel.getLooseLep(lepOpt)['pt']
             lepid = getSel.getLooseLep(lepOpt)['idx']
             Fill1D(histos['LepPt_loose'], lepPt, lumiscale)
-            if getSel.loosepasstight(idx, lepOpt):
+            if getSel.loosepasstight(lepid, lepOpt):
                 Fill1D(histos['LepPt_tight'], lepPt, lumiscale)
 
     hfile.Write()
