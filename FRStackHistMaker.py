@@ -22,7 +22,7 @@ def get_parser():
     argParser.add_argument('--startfile',        action='store',                     type=int,            default=0,                                                help="start from which root file like 0th or 10th etc?" )
     argParser.add_argument('--nfiles',           action='store',                     type=int,            default=-1,                                               help="No of files to run. -1 means all files" )
     argParser.add_argument('--nevents',           action='store',                    type=int,            default=-1,                                               help="No of events to run. -1 means all events" )
-    argParser.add_argument('--channel',           action='store',                    type=str,            default='Muon',                                       help="Which lepton?" )
+    argParser.add_argument('--channel',           action='store',                    type=str,            default='Electron',                                       help="Which lepton?" )
     argParser.add_argument('--region',            action='store',                    type=str,            default='mesurement',                                     help="Which lepton?" )    
     argParser.add_argument('--pJobs',             action='store',                    type=bool,            default=False,                                           help="using GPU parallel program or not" )
 
@@ -54,7 +54,7 @@ else:
     DataLumi = SampleChain.luminosity_2018
 
 
-ptBinning = [3.5, 5, 12, 20, 30, 50, 80, 200]
+ptBinning = [0, 3.5, 5, 12, 20, 30, 50, 80, 200]
 
 histext = ''
 
