@@ -18,10 +18,11 @@ def get_parser():
     nargs='+',       # one or more parameters to this switch
     type=str,        # /parameters/ are ints
     dest='alist',     # store in 'list'.
-    default=['VV', 'DYJetsToLL', 'ZJetsToNuNu', 'ST','TTSingleLep_pow', 'WJetsToLNu', 'QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
+    default=['QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
+    #default=['VV', 'DYJetsToLL', 'ZJetsToNuNu', 'ST','TTSingleLep_pow', 'WJetsToLNu', 'QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
     )
     argParser.add_argument(
-        '-c', '--channel',           action='store',                    type=str,            default='Muon',
+        '-c', '--channel',           action='store',                    type=str,            default='Electron',
     )
     return argParser
 
@@ -38,8 +39,8 @@ doplots = True
 for sl in samplelists:
     if os.path.exists('FRStackHist_'+lepOpt+'_'+sl+'.root'):
         files.append(ROOT.TFile.Open('FRStackHist_'+lepOpt+'_'+sl+'.root'))
-    elif os.path.exists(plotDir+'StackFiles/FRStackHist_'+lepOpt+'_'+sl+'.root'):
-        files.append(ROOT.TFile.Open(plotDir+'StackFiles/FRStackHist_'+lepOpt+'_'+sl+'.root'))
+    elif os.path.exists(plotDir+'FRStackFiles/FRStackHist_'+lepOpt+'_'+sl+'.root'):
+        files.append(ROOT.TFile.Open(plotDir+'FRStackFiles/FRStackHist_'+lepOpt+'_'+sl+'.root'))
     else:
         doplots = False        
         print 'Root files for',lepOpt,'channel and for',sl,'sample soes not exist. Please run python FRStackHistMaker.py --sample',sl,'--channel',lepOpt
