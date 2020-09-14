@@ -7,6 +7,7 @@ from RegSel import RegSel
 
 sys.path.append('../')
 from Helper.HistInfo import HistInfo
+from Helper.MCWeight import MCWeight
 from TriggerStudy.TrigVarSel import TrigVarSel
 from Sample.SampleChain import SampleChain
 from Helper.VarCalc import *
@@ -79,17 +80,19 @@ if isinstance(samplelist[samples][0], types.ListType):
             ch.GetEntry(ientry)
             if isData:
                 lumiscale = 1.0
+                MCcorr = 1.0
             else:
                 lumiscale = (DataLumi/1000.0) * ch.weight
+                MCcorr = MCWeight(ch, year).getTotalWeight()
             getSel = RegSel(ch, isData, year)
             msrReg = getSel.MsrmntReg(lepOpt)
             passTrig = TrigVarSel(ch, sample).passFakeRateJetTrig() if isData else True
             if msrReg and passTrig:
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepid = getSel.getLooseLep(lepOpt)['idx']
-                Fill1D(histos['LepPt_loose'], lepPt, lumiscale)
+                Fill1D(histos['LepPt_loose'], lepPt, lumiscale * MCcorr)
                 if getSel.loosepasstight(lepid, lepOpt):
-                    Fill1D(histos['LepPt_tight'], lepPt, lumiscale)
+                    Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
         hfile.Write()
 
 else:
@@ -114,16 +117,18 @@ else:
         ch.GetEntry(ientry)
         if isData:
             lumiscale = 1.0
+            MCcorr = 1.0
         else:
             lumiscale = (DataLumi/1000.0) * ch.weight
+            MCcorr = MCWeight(ch, year).getTotalWeight()
         getSel = RegSel(ch, isData, year)
         msrReg = getSel.MsrmntReg(lepOpt)
         passTrig = TrigVarSel(ch, sample).passFakeRateJetTrig() if isData else True
         if msrReg and passTrig:
             lepPt = getSel.getLooseLep(lepOpt)['pt']
             lepid = getSel.getLooseLep(lepOpt)['idx']
-            Fill1D(histos['LepPt_loose'], lepPt, lumiscale)
+            Fill1D(histos['LepPt_loose'], lepPt, lumiscale * MCcorr)
             if getSel.loosepasstight(lepid, lepOpt):
-                Fill1D(histos['LepPt_tight'], lepPt, lumiscale)
+                Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
 
     hfile.Write()
