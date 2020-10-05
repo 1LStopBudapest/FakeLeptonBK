@@ -98,8 +98,8 @@ class RegSel():
 
     def dphicut(self):
         cut = False
-        if len(self.selectjetIdx(30)) >=2 and self.tr.Jet_pt[self.selectjetIdx(30)[1]]> 60:
-            if DeltaPhi(self.tr.Jet_phi[self.selectjetIdx(30)[0]], self.tr.Jet_phi[self.selectjetIdx(30)[1]])<2.5:
+        if len(self.selectjetIdx(30)) >=2 and self.tr.JetGood_pt[self.selectjetIdx(30)[1]]> 60:
+            if DeltaPhi(self.tr.JetGood_phi[self.selectjetIdx(30)[0]], self.tr.JetGood_phi[self.selectjetIdx(30)[1]])<2.5:
                 cut = True
         return cut
 
@@ -124,7 +124,7 @@ class RegSel():
 
     def XtraJetVeto(self):
         cut = True
-        if len(self.selectjetIdx(30)) >=3 and self.tr.Jet_pt[self.selectjetIdx(30)[2]]> 60:
+        if len(self.selectjetIdx(30)) >=3 and self.tr.JetGood_pt[self.selectjetIdx(30)[2]]> 60:
             cut = False
         return cut
 
@@ -182,14 +182,14 @@ class RegSel():
     def calHT(self, thr):
         HT = 0
         for i in self.selectjetIdx(thr):
-            HT = HT + self.tr.Jet_pt[i]
+            HT = HT + self.tr.JetGood_pt[i]
         return HT
 
     def calNj(self, thrsld):
         return len(self.selectjetIdx(thrsld))
         
     def getISRPt(self):
-        return self.tr.Jet_pt[self.selectISRjetIdx()[0]] if len(self.selectISRjetIdx()) else 0
+        return self.tr.JetGood_pt[self.selectISRjetIdx()[0]] if len(self.selectISRjetIdx()) else 0
     
     def cntBtagjet(self, discOpt='CSVV2', ptthrsld=30):
         return len(self.selectBjetIdx(discOpt, ptthrsld))
@@ -202,23 +202,23 @@ class RegSel():
     
     def selectjetIdx(self, thrsld=30):
         idx = []
-        for i in range(len(self.tr.Jet_pt)):
-            if self.tr.Jet_pt[i]>thrsld and abs(self.tr.Jet_eta[i])<2.4:
+        for i in range(len(self.tr.JetGood_pt)):
+            if self.tr.JetGood_pt[i]>thrsld and abs(self.tr.JetGood_eta[i])<2.4:
                 idx.append(i)
         return idx
 
     def selectISRjetIdx(self, thrsld=100):
         idx = []
-        for i in range(len(self.tr.Jet_pt)):
-            if self.tr.Jet_pt[i]>thrsld and abs(self.tr.Jet_eta[i])<2.4:
+        for i in range(len(self.tr.JetGood_pt)):
+            if self.tr.JetGood_pt[i]>thrsld and abs(self.tr.JetGood_eta[i])<2.4:
                 idx.append(i)
         return idx
 
     def selectBjetIdx(self, discOpt='DeepCSV', ptthrsld=30):
         idx = []
-        for i in range(len(self.tr.Jet_pt)):
-            if self.tr.Jet_pt[i]>ptthrsld and abs(self.tr.Jet_eta[i])<2.4:
-                if (self.isBtagCSVv2(self.tr.Jet_btagCSVV2[i], self.yr) if discOpt == 'CSVV2' else self.isBtagDeepCSV(self.tr.Jet_btagDeepB[i], self.yr)):
+        for i in range(len(self.tr.JetGood_pt)):
+            if self.tr.JetGood_pt[i]>ptthrsld and abs(self.tr.JetGood_eta[i])<2.4:
+                if (self.isBtagCSVv2(self.tr.JetGood_btagCSVV2[i], self.yr) if discOpt == 'CSVV2' else self.isBtagDeepCSV(self.tr.JetGood_btagDeepB[i], self.yr)):
                     idx.append(i)
         return idx
 
