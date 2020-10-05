@@ -53,7 +53,7 @@ for sL in samplesRun:
         sLi = sL.replace('Data','')+'Run'
         bashline.append('hadd FRStackHist_%s_%s.root FRStackHist_%s_%s*.root\n'%(channel, sL, channel, sLi))
     elif isinstance(samplelist[sL][0], types.ListType):
-        sLi = 'hadd FRStackHist_'channel+'_'+sL+'.root'+str("".join(' FRStackHist_'+channel+list(samplelist.keys())[list(samplelist.values()).index(s)]+'*.root' for s in samplelist[sL]))
+        sLi = 'hadd FRStackHist_'+channel+'_'+sL+'.root'+str("".join(' FRStackHist_'+channel+'_'+list(samplelist.keys())[list(samplelist.values()).index(s)]+'*.root' for s in samplelist[sL]))
         bashline.append('%s\n'%sLi)
     else:
         bashline.append('hadd FRStackHist_%s_%s.root FRStackHist_%s_%s_*.root\n'%(channel, sL, channel, sL))
