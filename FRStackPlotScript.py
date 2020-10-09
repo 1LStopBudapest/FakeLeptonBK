@@ -48,16 +48,18 @@ if not os.path.exists(Rootfilesdirpath):
 bashline = []    
 bashline.append('parallel --jobs %i < parallelJobsubmit.txt\n'%TotJobs)
 
+lepOpt = 'Ele' if 'Electron' in channel else 'Mu'
+
 for sL in samplesRun:
     if 'Data' in sL:
         sLi = sL.replace('Data','')+'Run'
-        bashline.append('hadd FRStackHist_%s_%s.root FRStackHist_%s_%s*.root\n'%(channel, sL, channel, sLi))
+        bashline.append('hadd FRStackHist_%s_%s.root FRStackHist_%s_%s*.root\n'%(lepOpt, sL, lepOpt, sLi))
     elif isinstance(samplelist[sL][0], types.ListType):
-        sLi = 'hadd FRStackHist_'+channel+'_'+sL+'.root'+str("".join(' FRStackHist_'+channel+'_'+list(samplelist.keys())[list(samplelist.values()).index(s)]+'*.root' for s in samplelist[sL]))
+        sLi = 'hadd FRStackHist_'+lepOpt+'_'+sL+'.root'+str("".join(' FRStackHist_'+lepOpt+'_'+list(samplelist.keys())[list(samplelist.values()).index(s)]+'*.root' for s in samplelist[sL]))
         bashline.append('%s\n'%sLi)
     else:
-        bashline.append('hadd FRStackHist_%s_%s.root FRStackHist_%s_%s_*.root\n'%(channel, sL, channel, sL))
-    bashline.append('mv FRStackHist_%s_%s.root %s\n'%(channel, sL, Rootfilesdirpath))
+        bashline.append('hadd FRStackHist_%s_%s.root FRStackHist_%s_%s_*.root\n'%(lepOpt, sL, lepOpt, sL))
+    bashline.append('mv FRStackHist_%s_%s.root %s\n'%(lepOpt, sL, Rootfilesdirpath))
 
 l = str(" ".join(s for s in samplesRun))
 bashline.append('python  FRStackPlot.py -l %s -c %s'%(l, channel))
