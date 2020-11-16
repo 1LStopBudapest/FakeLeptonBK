@@ -18,8 +18,8 @@ def get_parser():
     nargs='+',       # one or more parameters to this switch
     type=str,        # /parameters/ are ints
     dest='alist',     # store in 'list'.
-    #default=['QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
-    default=['VV', 'DYJetsToLL', 'ZJetsToNuNu', 'ST','TTSingleLep_pow', 'WJetsToLNu', 'QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
+    default=['QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
+    #default=['VV', 'DYJetsToLL', 'ZJetsToNuNu', 'ST','TTSingleLep_pow', 'WJetsToLNu', 'QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
     )
     argParser.add_argument(
         '-c', '--channel',           action='store',                    type=str,            default='Electron',
@@ -31,9 +31,7 @@ options = get_parser().parse_args()
 samplelists = options.alist
 channel = options.channel
 
-#lepOpt = 'Ele' if 'Electron' in channel else 'Mu'
 lepOpt = 'Ele' if 'Electron' in channel else 'Mu'
-
 
 files = []
 doplots = True

@@ -59,41 +59,7 @@ ptBinning = [0, 3.5, 5, 12, 20, 30, 50, 80, 200]
 
 histext = ''
 
-if 'T2tt' in samples:
-    sample = samples
-    print 'running over: ', sample
-    hfile = ROOT.TFile( 'FRStackHist_'+lepOpt+'_'+sample+'_%i_%i'%(options.startfile+1, options.startfile + options.nfiles)+'.root', 'RECREATE')
-    histos = {}
-    histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    
-    ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
-    print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-    n_entries = ch.GetEntries()
-    nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
-    print 'Running over total events: ', nevtcut+1
-    for ientry in range(n_entries):
-        if ientry > nevtcut: break
-        if ientry % (nevtcut/10)==0 : print 'processing ', ientry,'th event'
-        ch.GetEntry(ientry)
-        if isData:
-            lumiscale = 1.0
-            MCcorr = 1.0
-        else:
-            lumiscale = (DataLumi/1000.0) * ch.weight
-            MCcorr = MCWeight(ch, year).getTotalWeight()
-        getSel = RegSel(ch, isData, year)
-        msrReg = getSel.MsrmntReg(lepOpt)
-        passTrig = TrigVarSel(ch, sample).passFakeRateJetTrig() if isData else True
-        if msrReg and passTrig:
-            lepPt = getSel.getLooseLep(lepOpt)['pt']
-            lepid = getSel.getLooseLep(lepOpt)['idx']
-            Fill1D(histos['LepPt_loose'], lepPt, lumiscale * MCcorr)
-            if getSel.loosepasstight(lepid, lepOpt):
-                Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
-    hfile.Write()
-
-elif isinstance(samplelist[samples][0], types.ListType):
+if isinstance(samplelist[samples][0], types.ListType):
     histext = samples
     for s in samplelist[samples]:
         sample = list(samplelist.keys())[list(samplelist.values()).index(s)]
