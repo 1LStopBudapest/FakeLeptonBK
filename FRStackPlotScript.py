@@ -7,7 +7,8 @@ from Sample.SampleChain import SampleChain
 from Sample.Dir import plotDir
 from Sample.FileList_Fake_2016 import samples as samples_2016
 
-samplesRun = ['QCD', 'JetHT_Data']
+#samplesRun = ['QCD', 'JetHT_Data']
+samplesRun = ['VV', 'DYJetsToLL', 'ZJetsToNuNu', 'ST','TTSingleLep_pow', 'WJetsToLNu', 'QCD', 'JetHT_Data']
 fileperjobMC = 1 
 fileperjobData = 1
 TotJobs = 4
@@ -68,5 +69,5 @@ fsh = open("parallelStackHist.sh", "w")
 fsh.write(''.join(bashline))
 fsh.close()
 os.system('chmod 744 parallelStackHist.sh')
-os.system('./parallelStackHist.sh')
-os.system('rm *.root parallelJobsubmit.txt parallelStackHist.sh')
+#os.system('./parallelStackHist.sh')
+#os.system('rm *.root parallelJobsubmit.txt parallelStackHist.sh')
