@@ -1,6 +1,7 @@
 import ROOT
 import math
 import os, sys
+import collections as coll
 
 sys.path.append('../')
 from Helper.VarCalc import *
@@ -14,9 +15,211 @@ class RegSel():
         
     #selection
     def MsrmntReg(self, lep):
-        reg = self.MsrMETcut() and self.MsrHTcut() and self.Msrlepcut(lep) and self.MsrMTcut(lep)
+        reg = self.MsrMETcut() and self.Msrlepcut(lep) and self.MsrMTcut(lep) and self.MsrJetGoodCleancut()
         return reg
     
+    def MsrMETcut(self):
+        cut = False
+        if self.tr.MET_pt < 50: # it was 40
+        #if self.tr.MET_pt <= 1000:
+            cut = True
+        return cut
+    
+    def MsrMTcut(self, lep):
+        MT = self.getLooseMuMT() if lep=='Mu' else self.getLooseEleMT()
+        return MT<40   # return true if mt < 40 and false if mt>=40 it was 30
+        #return MT<1000
+
+    def MsrMT(self, lep):
+        MT = self.getLooseMuMT() if lep=='Mu' else self.getLooseEleMT()
+        return MT
+
+    def Msrlepcut(self, lep):
+        return len(self.selectLooseMuIdx())==1 if lep=='Mu' else len(self.selectLooseEleIdx()) == 1 #true if len is >=1 for Janik only =1
+    
+    def MsrJetGoodCleancut(self):
+        return len(self.selectJetGoodCleanHILooseMuandeleIdx())>=1 
+        
+    def selectJetGoodCleanHILooseMuandeleIdx(self,  thrsld=40):
+        lepvarL = sortedlist(self.getLepVar(self.selectLooseMuIdx(),self.selectLooseEleIdx())) 
+        idx = []
+        d = {}
+        for j in range(len(self.tr.JetGood_pt)):
+            clean = False
+            if self.tr.JetGood_pt[j] > thrsld and abs(self.tr.Jet_eta[j]) < 2.4 and self.tr.JetGood_jetId[j] > 0:
+                clean = True
+                for l in range(len(lepvarL)):  #the condition of cleaning jet?
+                    dR = DeltaR(lepvarL[l]['eta'], lepvarL[l]['phi'], self.tr.JetGood_eta[j], self.tr.JetGood_phi[j])
+                    ptRatio = float(self.tr.JetGood_pt[j])/float(lepvarL[l]['pt'])
+                    if dR < 0.4 and ptRatio < 2:
+                        clean = False
+                        break
+                if clean:
+                    d[self.tr.JetGood_pt[j]] = j
+        od = coll.OrderedDict(sorted(d.items(), reverse=True))
+        for jetgoodpt in od:
+            idx.append(od[jetgoodpt])
+        return idx
+    
+    
+    def getLooseMu(self):
+        muvarL = sortedlist(self.getMuVar(self.selectLooseMuIdx())) # sort from high to small according to pt in varCalc.py
+        return muvarL[0]
+        
+    def getLooseEle(self):
+        elevarL = sortedlist(self.getEleVar(self.selectLooseEleIdx()))
+        return elevarL[0]
+
+    def getLooseLep(self, lep):
+        return self.getLooseMu() if lep=='Mu' else self.getLooseEle()
+    
+    
+    def getLooseMuMT(self):
+        muvar = sortedlist(self.getMuVar(self.selectLooseMuIdx()))
+        return MT(muvar[0]['pt'], muvar[0]['phi'], self.tr.MET_pt, self.tr.MET_phi) if len(muvar) else 0
+
+    def getLooseEleMT(self):
+        elevar = sortedlist(self.getEleVar(self.selectLooseEleIdx()))
+        return MT(elevar[0]['pt'], elevar[0]['phi'], self.tr.MET_pt, self.tr.MET_phi) if len(elevar) else 0
+        
+    def getMuVar(self, muId):
+        Llist = []
+        for id in muId:
+            Llist.append({'pt':self.tr.Muon_pt[id], 'eta':self.tr.Muon_eta[id], 'phi':self.tr.Muon_phi[id], 'dxy':self.tr.Muon_dxy[id], 'dz': self.tr.Muon_dz[id], 'idx':id})
+        return Llist
+
+    def getEleVar(self, eId):
+        Llist = []
+        for id in eId:
+            Llist.append({'pt':self.tr.Electron_pt[id], 'eta':self.tr.Electron_eta[id], 'phi':self.tr.Electron_phi[id], 'dxy':self.tr.Electron_dxy[id], 'dz': self.tr.Electron_dz[id], 'idx':id})
+        return Llist
+    
+    def getLepVar(self, muId, eId):
+        Llist = []
+        for id in muId:
+            Llist.append({'pt':self.tr.Muon_pt[id], 'eta':self.tr.Muon_eta[id], 'phi':self.tr.Muon_phi[id], 'dxy':self.tr.Muon_dxy[id], 'dz': self.tr.Muon_dz[id], 'idx':id})
+        for id in eId:
+            Llist.append({'pt':self.tr.Electron_pt[id], 'eta':self.tr.Electron_eta[id], 'phi':self.tr.Electron_phi[id], 'dxy':self.tr.Electron_dxy[id], 'dz': self.tr.Electron_dz[id], 'idx':id})
+        return Llist
+    
+    def selectLooseMuIdx(self):
+        idx = []
+        for i in range(len(self.tr.Muon_pt)):
+            if self.muonSelector(pt=self.tr.Muon_pt[i], eta=self.tr.Muon_eta[i],iso=self.tr.Muon_pfRelIso03_all[i], dxy=self.tr.Muon_dxy[i], dz=self.tr.Muon_dz[i], Id=self.tr.Muon_looseId[i], lepton_selection='looseHybridIso'):
+                idx.append(i)
+        return idx
+    
+    def selectLooseEleIdx(self):
+        idx = []
+        for i in range(len(self.tr.Electron_pt)):
+            if self.eleSelector(pt=self.tr.Electron_pt[i], eta=self.tr.Electron_eta[i], iso=self.tr.Electron_pfRelIso03_all[i], dxy=self.tr.Electron_dxy[i], dz=self.tr.Electron_dz[i], Id=self.tr.Electron_vidNestedWPBitmap[i],lepton_selection='looseHybridIso'):
+                idx.append(i)              
+	return idx
+    
+    def muonSelector( self, pt, eta, iso, dxy, dz, Id = True, lepton_selection='HybridIso', year=2016):
+        if lepton_selection == 'HybridIso':
+            def func():
+                if pt <= 25 and pt >3.5:
+                    return \
+                        abs(eta)       < 2.4 \
+                        and (iso* pt) <= 5.0 \
+                        and abs(dxy)       < 0.02 \
+                        and abs(dz)        < 0.1 \
+                        and Id
+                elif pt > 25:
+                    return \
+                        abs(eta)       < 2.4 \
+                        and iso < 0.2 \
+                        and abs(dxy)       < 0.02 \
+                        and abs(dz)        < 0.1 \
+                        and Id
+            
+        elif lepton_selection == 'looseHybridIso':
+            def func():
+                if pt <= 25 and pt >3.5:
+                    return \
+                        abs(eta)       < 2.4 \
+                        and (iso*pt) <= 20.0 \
+                        and abs(dxy)       < 0.1 \
+                        and abs(dz)        < 0.5 \
+                        and Id
+                elif pt > 25:
+                    return \
+                        abs(eta)       < 2.4 \
+                        and iso < 0.8 \
+                        and abs(dxy)       < 0.1 \
+                        and abs(dz)        < 0.5 \
+                        and Id
+        else:
+            def func():
+                return \
+                    pt >3.5 \
+                    and abs(eta)       < 2.4 \
+                    and Id
+       
+        return func()
+
+
+    def eleSelector(self, pt, eta, iso, dxy, dz, Id, lepton_selection='HybridIso', year=2016):
+        if lepton_selection == 'HybridIso':  # tight selection for fake rate
+            def func():
+                if pt <= 25 and pt >5:
+                    return \
+                        abs(eta)       < 2.5 \
+                        and (iso* pt) <= 5.0 \
+                        and abs(dxy)       < 0.02 \
+                        and abs(dz)        < 0.1 \
+                        and eleVID(Id, 1, removedCuts=['pfRelIso03_all']) #cutbased id: 0:fail, 1:veto, 2:loose, 3:medium, 4:tight
+                elif pt > 25:
+                    return \
+                        abs(eta)       < 2.5 \
+                        and iso < 0.2 \
+                        and abs(dxy)       < 0.02 \
+                        and abs(dz)        < 0.1 \
+                        and self.eleID(Id,1)
+
+        elif lepton_selection == 'looseHybridIso':
+            def func():
+                if pt <= 25 and pt >5:
+                    return \
+                        abs(eta)       < 2.5 \
+                        and (iso*pt) <= 20.0 \
+                        and abs(dxy)       < 0.1 \
+                        and abs(dz)        < 0.5 \
+                        and eleVID(Id, 1, removedCuts=['pfRelIso03_all']) #cutbased id: 0:fail, 1:veto, 2:loose, 3:medium, 4:tight
+                elif pt > 25:
+                    return \
+                        abs(eta)       < 2.5 \
+                        and iso < 0.8 \
+                        and abs(dxy)       < 0.1 \
+                        and abs(dz)        < 0.5 \
+                        and eleVID(Id, 1, removedCuts=['pfRelIso03_all']) #cutbased id: 0:fail, 1:veto, 2:loose, 3:medium, 4:tight
+
+        else:
+            def func():
+                return \
+                    pt >5 \
+                    and abs(eta)       < 2.5 \
+                    and self.eleID(Id,1)
+        return func()  
+  
+    def loosepasstight(self, idx, lep):
+        lt = False
+        if lep=='Mu':
+            if self.muonSelector(self.tr.Muon_pt[idx], self.tr.Muon_eta[idx], self.tr.Muon_pfRelIso03_all[idx], self.tr.Muon_dxy[idx], self.tr.Muon_dz[idx],self.tr.Muon_looseId[idx], 'HybridIso'):
+                lt = True
+        else:
+            if self.eleSelector(self.tr.Electron_pt[idx], self.tr.Electron_eta[idx], self.tr.Electron_pfRelIso03_all[idx], self.tr.Electron_dxy[idx], self.tr.Electron_dz[idx], self.tr.Electron_vidNestedWPBitmap[idx],'HybridIso'):
+                lt = True
+
+        return lt    
+  
+  
+  
+  
+  
+    
+    '''
     def PreSelection(self):
         ps = self.METcut() and self.HTcut() and self.ISRcut() and self.lepcut() and self.dphicut() and self.XtralepVeto() and self.XtraJetVeto() and self.tauVeto()
         return ps
@@ -78,7 +281,7 @@ class RegSel():
 
     def MsrMETcut(self):
         cut = False
-        if self.tr.MET_pt < 40:
+        if self.tr.MET_pt < 50: # it was 40 
             cut = True
         return cut
         
@@ -88,14 +291,14 @@ class RegSel():
         if HT >thr:
             cut = True
         return cut
-
-    def MsrHTcut(self, jetpt=30):
+   
+    def MsrHTcut(self, jetpt=40): # it was 30
         cut = False
         HT = self.calHT(jetpt)
         if HT > 900:
             cut = True
         return cut
-
+    
     def dphicut(self):
         cut = False
         if len(self.selectjetIdx(30)) >=2 and self.tr.JetGood_pt[self.selectjetIdx(30)[1]]> 60:
@@ -107,7 +310,7 @@ class RegSel():
         return len(self.getLepVar(self.selectMuIdx(), self.selectEleIdx())) >= 1
 
     def Msrlepcut(self, lep):
-        return len(self.selectLooseMuIdx())>=1 if lep=='Mu' else len(self.selectLooseEleIdx()) >= 1
+        return len(self.selectLooseMuIdx())>=1 if lep=='Mu' else len(self.selectLooseEleIdx()) >= 1 #true if len is >=1 for Janik only =1
     
     def SingleElecut(self):
         return self.cntEle()>=1 and self.cntMuon()==0
@@ -137,11 +340,11 @@ class RegSel():
 
     def MsrMTcut(self, lep):
         MT = self.getLooseMuMT() if lep=='Mu' else self.getLooseEleMT()
-        return MT<30
+        return MT<40   # return true if mt < 40 and false if mt>=40 it was 30
 
     #var
     def getLooseMu(self):
-        muvarL = sortedlist(self.getMuVar(self.selectLooseMuIdx()))
+        muvarL = sortedlist(self.getMuVar(self.selectLooseMuIdx())) # sort from high to small according to pt in varCalc.py
         return muvarL[0]
         
     def getLooseEle(self):
@@ -200,7 +403,7 @@ class RegSel():
     def	cntEle(self):
     	return len(self.selectEleIdx())
     
-    def selectjetIdx(self, thrsld=30):
+    def selectjetIdx(self, thrsld=40): # it was 30
         idx = []
         for i in range(len(self.tr.JetGood_pt)):
             if self.tr.JetGood_pt[i]>thrsld and abs(self.tr.JetGood_eta[i])<2.4:
@@ -225,14 +428,14 @@ class RegSel():
     def	selectEleIdx(self):
         idx = []
         for i in range(len(self.tr.Electron_pt)):
-            if self.eleSelector(pt=self.tr.Electron_pt[i], eta=self.tr.Electron_eta[i], iso=self.tr.Electron_pfRelIso03_all[i], dxy=self.tr.Electron_dxy[i], dz=self.tr.Electron_dz[i], Id=self.tr.Electron_cutBased_Fall17_V1[i],lepton_selection='HybridIso'):
+            if self.eleSelector(pt=self.tr.Electron_pt[i], eta=self.tr.Electron_eta[i], iso=self.tr.Electron_pfRelIso03_all[i], dxy=self.tr.Electron_dxy[i], dz=self.tr.Electron_dz[i], Id=self.tr.Electron_vidNestedWPBitmap[i][i],lepton_selection='HybridIso'):
                 idx.append(i)              
 	return idx
 
     def	selectLooseEleIdx(self):
         idx = []
         for i in range(len(self.tr.Electron_pt)):
-            if self.eleSelector(pt=self.tr.Electron_pt[i], eta=self.tr.Electron_eta[i], iso=self.tr.Electron_pfRelIso03_all[i], dxy=self.tr.Electron_dxy[i], dz=self.tr.Electron_dz[i], Id=self.tr.Electron_cutBased_Fall17_V1[i],lepton_selection='looseHybridIso'):
+            if self.eleSelector(pt=self.tr.Electron_pt[i], eta=self.tr.Electron_eta[i], iso=self.tr.Electron_pfRelIso03_all[i], dxy=self.tr.Electron_dxy[i], dz=self.tr.Electron_dz[i], Id=self.tr.Electron_vidNestedWPBitmap[i],lepton_selection='looseHybridIso'):
                 idx.append(i)              
 	return idx
     
@@ -240,14 +443,14 @@ class RegSel():
     def selectMuIdx(self):
         idx = []
         for i in range(len(self.tr.Muon_pt)):
-            if self.muonSelector(pt=self.tr.Muon_pt[i], eta=self.tr.Muon_eta[i], iso=self.tr.Muon_pfRelIso03_all[i], dxy=self.tr.Muon_dxy[i], dz=self.tr.Muon_dz[i], lepton_selection='HybridIso'):
+            if self.muonSelector(pt=self.tr.Muon_pt[i], eta=self.tr.Muon_eta[i], iso=self.tr.Muon_pfRelIso03_all[i], dxy=self.tr.Muon_dxy[i], dz=self.tr.Muon_dz[i], Id=self.tr.Muon_looseId[i], lepton_selection='HybridIso'):
                 idx.append(i)
         return idx
 
     def selectLooseMuIdx(self):
         idx = []
         for i in range(len(self.tr.Muon_pt)):
-            if self.muonSelector(pt=self.tr.Muon_pt[i], eta=self.tr.Muon_eta[i],iso=self.tr.Muon_pfRelIso03_all[i], dxy=self.tr.Muon_dxy[i], dz=self.tr.Muon_dz[i], lepton_selection='looseHybridIso'):
+            if self.muonSelector(pt=self.tr.Muon_pt[i], eta=self.tr.Muon_eta[i],iso=self.tr.Muon_pfRelIso03_all[i], dxy=self.tr.Muon_dxy[i], dz=self.tr.Muon_dz[i], Id=self.tr.Muon_looseId[i], lepton_selection='looseHybridIso'):
                 idx.append(i)
         return idx
     
@@ -296,7 +499,7 @@ class RegSel():
                 if pt <= 25 and pt >3.5:
                     return \
                         abs(eta)       < 2.4 \
-                        and (iso* pt) < 5.0 \
+                        and (iso* pt) <= 5.0 \   # absolute iso = relative iso * pt
                         and abs(dxy)       < 0.02 \
                         and abs(dz)        < 0.1 \
                         and Id
@@ -313,7 +516,7 @@ class RegSel():
                 if pt <= 25 and pt >3.5:
                     return \
                         abs(eta)       < 2.4 \
-                        and (iso*pt) < 20.0 \
+                        and (iso*pt) <= 20.0 \
                         and abs(dxy)       < 0.1 \
                         and abs(dz)        < 0.5 \
                         and Id
@@ -335,15 +538,15 @@ class RegSel():
 
 
     def eleSelector(self, pt, eta, iso, dxy, dz, Id, lepton_selection='HybridIso', year=2016):
-        if lepton_selection == 'HybridIso':
+        if lepton_selection == 'HybridIso':  # tight selection for fake rate
             def func():
                 if pt <= 25 and pt >5:
                     return \
                         abs(eta)       < 2.5 \
-                        and (iso* pt) < 5.0 \
+                        and (iso* pt) <= 5.0 \
                         and abs(dxy)       < 0.02 \
                         and abs(dz)        < 0.1 \
-                        and self.eleID(Id, 1) #cutbased id: 0:fail, 1:veto, 2:loose, 3:medium, 4:tight
+                        and eleVID(Id, 1, removedCuts=['pfRelIso03_all']) #cutbased id: 0:fail, 1:veto, 2:loose, 3:medium, 4:tight
                 elif pt > 25:
                     return \
                         abs(eta)       < 2.5 \
@@ -357,17 +560,17 @@ class RegSel():
                 if pt <= 25 and pt >5:
                     return \
                         abs(eta)       < 2.5 \
-                        and (iso*pt) < 20.0 \
+                        and (iso*pt) <= 20.0 \
                         and abs(dxy)       < 0.1 \
                         and abs(dz)        < 0.5 \
-                        and self.eleID(Id,1)
+                        and eleVID(Id, 1, removedCuts=['pfRelIso03_all']) #cutbased id: 0:fail, 1:veto, 2:loose, 3:medium, 4:tight
                 elif pt > 25:
                     return \
                         abs(eta)       < 2.5 \
                         and iso < 0.8 \
                         and abs(dxy)       < 0.1 \
                         and abs(dz)        < 0.5 \
-                        and self.eleID(Id,1)
+                        and eleVID(Id, 1, removedCuts=['pfRelIso03_all']) #cutbased id: 0:fail, 1:veto, 2:loose, 3:medium, 4:tight
 
         else:
             def func():
@@ -398,4 +601,4 @@ class RegSel():
                 if abs(self.tr.GenPart_pdgId[self.tr.GenPart_genPartIdxMother[i]])!=22:
                     L.append({'pt':self.tr.GenPart_pt[i], 'eta':self.tr.GenPart_eta[i], 'phi':self.tr.GenPart_phi[i]})
         return L
-
+    '''

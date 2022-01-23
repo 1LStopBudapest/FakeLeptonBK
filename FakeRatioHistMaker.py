@@ -67,7 +67,8 @@ if 'T2tt' in samples:
 
     ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-    n_entries = ch.GetEntries()
+    #n_entries = ch.GetEntries()
+    n_entries = 100
     nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
     print 'Running over total events: ', nevtcut+1
     for ientry in range(n_entries):
@@ -102,7 +103,8 @@ elif isinstance(samplelist[samples][0], types.ListType):
 
         ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
         print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-        n_entries = ch.GetEntries()
+        #n_entries = ch.GetEntries()
+        n_entries = 100
         nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
         print 'Running over total events: ', nevtcut+1
         for ientry in range(n_entries):
@@ -138,7 +140,8 @@ else:
     
     ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-    n_entries = ch.GetEntries()
+    #n_entries = ch.GetEntries()
+    n_entries = 100
     nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
     print 'Running over total events: ', nevtcut+1
     for ientry in range(n_entries):

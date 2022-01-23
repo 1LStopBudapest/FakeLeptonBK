@@ -5,9 +5,10 @@ import types
 sys.path.append('../')
 from Sample.SampleChain import SampleChain
 from Sample.Dir import plotDir
-from Sample.FileList_Fake_2016 import samples as samples_2016
+from Sample.FileList_Fake_2016_janik  import samples as samples_2016
 
-samplesRun = ['QCD', 'JetHT_Data']
+#samplesRun = [ 'DYJetsToLL', 'WJetsToLNu_comb' , 'TTbar' , 'TTLep_pow' , 'TTSingleLep_pow' , 'QCD', 'DoubleMuon_Data']
+samplesRun = ['QCD', 'WJetsToLNu_comb' , 'DoubleMuon_Data']
 fileperjobMC = 1 
 fileperjobData = 1
 TotJobs = 4
@@ -35,7 +36,7 @@ for sL in samplesRun:
         tfiles = len(SampleChain.getfilelist(samplelist[sL][0]))
         fileperjob = fileperjobData if ('Run' in sL or 'Data' in sL) else fileperjobMC
         for i in range(0, tfiles, fileperjobMC):
-            txtline.append("python FRStackHistMaker.py --sample %s %s --channel --startfile %i --nfiles %i\n"%(sL, channel, i, fileperjobMC))
+            txtline.append("python FRStackHistMaker.py --sample %s  --channel %s --startfile %i --nfiles %i\n"%(sL, channel, i, fileperjobMC))
                 
 fout = open("parallelJobsubmit.txt", "w")
 fout.write(''.join(txtline))
@@ -69,4 +70,5 @@ fsh.write(''.join(bashline))
 fsh.close()
 os.system('chmod 744 parallelStackHist.sh')
 os.system('./parallelStackHist.sh')
-os.system('rm *.root parallelJobsubmit.txt parallelStackHist.sh')
+os.system('mv *.root parallelJobsubmit.txt parallelStackHist.sh ../../../fake_rate_results/root_txt_sh_files/')
+
