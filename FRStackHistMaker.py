@@ -1,7 +1,7 @@
 import os, sys
 import ROOT
 import types
-import numpy
+#import numpy
 
 from RegSel import RegSel
 
@@ -56,11 +56,14 @@ else:
 
 
 ptBinning = [3.5, 5, 12, 20, 30, 50,200]
-metBinning= [0,10,20,30,40,50,60,70,80,90,100,120,140,160,180,200,220,240,260,1000]
-mtBinning=  [0,10,20,30,40,50,60,70,80,90,100,120,140,160,180,200,220,240,260,1000]
+#metBinning= [10, 0, 1000]
+metBinning= [0.0, 100 , 200 , 300 , 400 , 500 , 600,700,800,900,1000]
+#mtBinning=  [10, 0, 1000]
+mtBinning=  [0.0, 100 , 200 , 300 , 400 , 500 , 600,700,800,900,1000]
 muon_etaBinning= [-2.4,-2,-1.6,-1.2,-0.8,-0.4,0,0.4,0.8,1.2,1.6,2,2.4]
 ele_etaBinning= [-2.5,-2,-1.5,-1.0,0,0.5,1,1.5,2,2.5]
-vtxBinning= [0,5,10,15,20,25,30,35,40,45,50]
+#vtxBinning= [10, 0, 50]
+vtxBinning= [0.0 , 10 , 20 , 30, 40 , 50]
 
 
 histext = ''
@@ -80,8 +83,8 @@ if 'T2tt' in samples:
     
     ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-    #n_entries = ch.GetEntries()
-    n_entries = 10
+    n_entries = ch.GetEntries()
+    #n_entries = 10
     nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
     print 'Running over total events: ', nevtcut+1
     for ientry in range(n_entries):
@@ -144,8 +147,8 @@ elif isinstance(samplelist[samples][0], types.ListType):
             ele_pt  = ROOT.std.vector('float')()
         '''
         print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-        #n_entries = ch.GetEntries()
-        n_entries = 10
+        n_entries = ch.GetEntries()
+        #n_entries = 10
         nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
         print 'Running over total events: ', nevtcut+1
         for ientry in range(n_entries):
@@ -200,7 +203,7 @@ else:
     histos = {}
     histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
     histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['MET'] = HistInfo(hname = 'MET', sample = histext, binning = metBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
+    histos['MET'] = HistInfo(hname = 'MET', sample = histext, binning = metBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()  
     histos['MT'] = HistInfo(hname = 'MT', sample = histext, binning = mtBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
     histos['Mu_Eta'] = HistInfo(hname = 'Mu_Eta', sample = histext, binning = muon_etaBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
     histos['Ele_Eta'] = HistInfo(hname = 'Ele_Eta', sample = histext, binning = ele_etaBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
@@ -213,8 +216,8 @@ else:
         ele_pt  = ROOT.std.vector('float')()
     '''
     print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-    #n_entries = ch.GetEntries()
-    n_entries = 10
+    n_entries = ch.GetEntries()
+    #n_entries = 10
     nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
     print 'Running over total events: ', nevtcut+1
     for ientry in range(n_entries):
@@ -246,16 +249,21 @@ else:
             lepid = getSel.getLooseLep(lepOpt)['idx']
             met   = ch.MET_pt
             mt    = getSel.MsrMT(lepOpt)
-            muon_eta = ch.Muon_eta
-            ele_eta = ch.Electron_eta
+            if lepOpt== 'Mu' : 
+                muon_eta = getSel.getLooseLep(lepOpt)['eta']
+            else: 
+                ele_eta = getSel.getLooseLep(lepOpt)['eta']
             npgood_vtx = ch.PV_npvsGood
-            print(lepPt , '  ', met , '  ',mt, '  ', muon_eta , '  ',ele_eta, '  ',npgood_vtx, ' ' , lumiscale , '  ' ,  MCcorr , '  ', lumiscale * MCcorr  )
+            #print(lepPt , '  ', met , '  ',mt, '  ', muon_eta , '  ',ele_eta, '  ',npgood_vtx, ' ' , lumiscale , '  ' ,  MCcorr , '  ', lumiscale * MCcorr  )
             
             Fill1D(histos['LepPt_loose'], lepPt, lumiscale * MCcorr)
             Fill1D(histos['MET'], met, lumiscale * MCcorr)
+           
             Fill1D(histos['MT'], mt, lumiscale * MCcorr)
-            Fill1D(histos['Mu_Eta'], muon_eta, lumiscale * MCcorr)
-            Fill1D(histos['Ele_Eta'], ele_eta, lumiscale * MCcorr)
+            if lepOpt== 'Mu' :
+                Fill1D(histos['Mu_Eta'], muon_eta, lumiscale * MCcorr)
+            else:
+                Fill1D(histos['Ele_Eta'], ele_eta, lumiscale * MCcorr)
             Fill1D(histos['Pgoodvtx_number'], npgood_vtx, lumiscale * MCcorr)
             
 
