@@ -48,4 +48,9 @@ for sl in samplelists:
 if doplots :
     StackHists(files, samplelists, 'LepPt_loose', plotDir, 'FRMeasurementRegion')
     StackHists(files, samplelists, 'LepPt_tight', plotDir, 'FRMeasurementRegion')
+    StackHists(files, samplelists, 'MET', plotDir, 'FRMeasurementRegion')
+    StackHists(files, samplelists, 'MT', plotDir, 'FRMeasurementRegion')
+    StackHists(files, samplelists, 'Mu_Eta', plotDir, 'FRMeasurementRegion')
+    StackHists(files, samplelists, 'Ele_Eta', plotDir, 'FRMeasurementRegion')
+    StackHists(files, samplelists, 'Pgoodvtx_number', plotDir, 'FRMeasurementRegion')
 
