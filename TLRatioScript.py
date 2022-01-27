@@ -7,7 +7,7 @@ from Sample.SampleChain import SampleChain
 from Sample.Dir import plotDir
 from Sample.FileList_Fake_2016_janik  import samples as samples_2016
 
-samplesRun = ['QCD', 'WJetsToLNu_comb', 'TTSingleLep_pow', 'TTLep_pow', 'DoubleMuon_Data']
+samplesRun = ['WJetsToLNu_comb', 'TTSingleLep_pow', 'TTLep_pow', 'DoubleMuon_Data']
 fileperjobMC = 1 
 fileperjobData = 1
 TotJobs = 4
@@ -30,46 +30,46 @@ for sL in samplesRun:
             fileperjob = fileperjobData if ('Run' in sample or 'Data' in sample) else fileperjobMC
             tfiles = len(SampleChain.getfilelist(samplelist[sample][0]))
             for i in range(0, tfiles, fileperjobMC):
-                txtline.append("python mTHistMaker.py --sample %s --channel %s --startfile %i --nfiles %i\n"%(sample, channel, i, fileperjobMC))
+                txtline.append("python TLHistMaker.py --sample %s --channel %s --startfile %i --nfiles %i\n"%(sample, channel, i, fileperjobMC))
     else:
         tfiles = len(SampleChain.getfilelist(samplelist[sL][0]))
         fileperjob = fileperjobData if ('Run' in sL or 'Data' in sL) else fileperjobMC
         for i in range(0, tfiles, fileperjobMC):
-            txtline.append("python mTHistMaker.py --sample %s  --channel %s --startfile %i --nfiles %i\n"%(sL, channel, i, fileperjobMC))
+            txtline.append("python TLHistMaker.py --sample %s  --channel %s --startfile %i --nfiles %i\n"%(sL, channel, i, fileperjobMC))
                 
-fout = open("mTparallelJobsubmit.txt", "w")
+fout = open("TLparallelJobsubmit.txt", "w")
 fout.write(''.join(txtline))
 fout.close()
 
-Rootfilesdirpath = os.path.join(plotDir,"FRmTHistFiles")
+Rootfilesdirpath = os.path.join(plotDir,"TLHistFiles")
 if not os.path.exists(Rootfilesdirpath):
     os.makedirs(Rootfilesdirpath)
 
 bashline = []    
-bashline.append("echo 'Start Running mTHistMaker.py in parallel GPU'\n\n")
-bashline.append('parallel --jobs %i < mTparallelJobsubmit.txt\n'%TotJobs)
-bashline.append("echo \n'Adding root files from THistMaker.py and moving to %s for late use'\n\n"%Rootfilesdirpath)
+bashline.append("echo 'Start Running TLHistMaker.py in parallel GPU'\n\n")
+bashline.append('parallel --jobs %i < TLparallelJobsubmit.txt\n'%TotJobs)
+bashline.append("echo \n'Adding root files from TLHistMaker.py and moving to %s for late use'\n\n"%Rootfilesdirpath)
 
 lepOpt = 'Ele' if 'Electron' in channel else 'Mu'
 
 for sL in samplesRun:
     if 'Data' in sL:
         sLi = sL.replace('Data','')+'Run'
-        bashline.append('hadd mTHist_%s_%s.root mTHist_%s_%s*.root\n'%(lepOpt, sL, lepOpt, sLi))
+        bashline.append('hadd TLHist_%s_%s.root TLHist_%s_%s*.root\n'%(lepOpt, sL, lepOpt, sLi))
     elif isinstance(samplelist[sL][0], types.ListType):
-        sLi = 'hadd mTHist_'+lepOpt+'_'+sL+'.root'+str("".join(' mTHist_'+lepOpt+'_'+list(samplelist.keys())[list(samplelist.values()).index(s)]+'*.root' for s in samplelist[sL]))
+        sLi = 'hadd TLHist_'+lepOpt+'_'+sL+'.root'+str("".join(' TLHist_'+lepOpt+'_'+list(samplelist.keys())[list(samplelist.values()).index(s)]+'*.root' for s in samplelist[sL]))
         bashline.append('%s\n'%sLi)
     else:
-        bashline.append('hadd mTHist_%s_%s.root mTHist_%s_%s_*.root\n'%(lepOpt, sL, lepOpt, sL))
-    bashline.append('mv mTHist_%s_%s.root %s\n'%(lepOpt, sL, Rootfilesdirpath))
+        bashline.append('hadd TLHist_%s_%s.root TLHist_%s_%s_*.root\n'%(lepOpt, sL, lepOpt, sL))
+    bashline.append('mv TLHist_%s_%s.root %s\n'%(lepOpt, sL, Rootfilesdirpath))
 
 l = str(" ".join(s for s in samplesRun))
-bashline.append('python  EWKNormCalc.py -l %s -c %s'%(l, channel))
+#bashline.append('python  FRStackPlot.py -l %s -c %s'%(l, channel))
     
-fsh = open("EWKNorm.sh", "w")
+fsh = open("TLRatio.sh", "w")
 fsh.write(''.join(bashline))
 fsh.close()
-os.system('chmod 744 EWKNorm.sh')
-os.system('./EWKNorm.sh')
-#os.system('rm *.root mTparallelJobsubmit.txt EWKNorm.sh')
+os.system('chmod 744 TLRatio.sh')
+os.system('./TLratio.sh')
+#os.system('rm *.root TLparallelJobsubmit.txt TLRatio.sh')
 

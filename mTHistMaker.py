@@ -82,9 +82,6 @@ if isinstance(samplelist[samples][0], types.ListType):
             if ientry % (nevtcut/10)==0 : print 'processing ', ientry,'th event'
             ch.GetEntry(ientry)
             '''
-            if isData:
-                ch.SetBranchAddress("Muon_pt", muon_pt)
-                ch.SetBranchAddress("Electron_pt", ele_pt)            
             if isData and lepOpt == 'Mu' and 'DoubleMuon' in samples and muon_pt > 30 : continue 
             if isData and lepOpt == 'Mu' and 'SingleMuon' in samples and muon_pt <= 30 : continue
             if isData and lepOpt == 'Ele' and 'JetHT' in samples and ele_pt > 12 : continue 

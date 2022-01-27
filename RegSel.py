@@ -214,7 +214,16 @@ class RegSel():
 
         return lt    
   
-  
+    def looseNottight(self, idx, lep):
+        lt = True
+        if lep=='Mu':
+            if self.muonSelector(self.tr.Muon_pt[idx], self.tr.Muon_eta[idx], self.tr.Muon_pfRelIso03_all[idx], self.tr.Muon_dxy[idx], self.tr.Muon_dz[idx],self.tr.Muon_looseId[idx], 'HybridIso'):
+                lt = False
+        else:
+            if self.eleSelector(self.tr.Electron_pt[idx], self.tr.Electron_eta[idx], self.tr.Electron_pfRelIso03_all[idx], self.tr.Electron_dxy[idx], self.tr.Electron_dz[idx], self.tr.Electron_vidNestedWPBitmap[idx],'HybridIso'):
+                lt = False
+
+        return lt    
   
   
   
