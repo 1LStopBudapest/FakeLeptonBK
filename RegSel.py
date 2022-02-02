@@ -21,27 +21,41 @@ class RegSel():
     def MsrMETcut(self):
         cut = False
         if self.tr.MET_pt < 50: # it was 40
-        #if self.tr.MET_pt <= 1000:
+            cut = True
+        return cut
+
+    def EWKTempMETcut(self):
+        cut = False
+        if self.tr.MET_pt > 50:
             cut = True
         return cut
     
     def MsrMTcut(self, lep):
-        MT = self.getLooseMuMT() if lep=='Mu' else self.getLooseEleMT()
+        MT = self.getMuMT('Loose') if lep=='Mu' else self.getLooseEleMT('Loose')
         return MT<40   # return true if mt < 40 and false if mt>=40 it was 30
         #return MT<1000
 
-    def MsrMT(self, lep):
-        MT = self.getLooseMuMT() if lep=='Mu' else self.getLooseEleMT()
+    def MsrMT(self, lep, lp='Loose'):
+        MT = self.getMuMT(lp) if lep=='Mu' else self.getEleMT(lp)
         return MT
 
     def Msrlepcut(self, lep):
         return len(self.selectLooseMuIdx())==1 if lep=='Mu' else len(self.selectLooseEleIdx()) == 1 #true if len is >=1 for Janik only =1
+
+    def EWKlepcut(self, lep):
+        return len(self.selectTightMuIdx())==1 if lep=='Mu' else len(self.selectTightEleIdx()) == 1 #true if len is >=1 for Janik only =1
     
     def MsrJetGoodCleancut(self):
-        return len(self.selectJetGoodCleanHILooseMuandeleIdx())>=1 
+        return len(self.selectLepCleanGoodJetIdx(lp='Loose'))>=1
+
+    def EWKJetGoodCleancut(self):
+        return len(self.selectLepCleanGoodJetIdx(lp='Tight'))>=1 
         
-    def selectJetGoodCleanHILooseMuandeleIdx(self,  thrsld=40):
-        lepvarL = sortedlist(self.getLepVar(self.selectLooseMuIdx(),self.selectLooseEleIdx())) 
+    def selectLepCleanGoodJetIdx(self, lp, thrsld=40):
+        if 'Loose' in lp:
+            lepvarL = sortedlist(self.getLepVar(self.selectLooseMuIdx(),self.selectLooseEleIdx()))
+        else:
+            lepvarL = sortedlist(self.getLepVar(self.selectTightMuIdx(),self.selectTightEleIdx()))
         idx = []
         d = {}
         for j in range(len(self.tr.JetGood_pt)):
@@ -74,12 +88,18 @@ class RegSel():
         return self.getLooseMu() if lep=='Mu' else self.getLooseEle()
     
     
-    def getLooseMuMT(self):
-        muvar = sortedlist(self.getMuVar(self.selectLooseMuIdx()))
+    def getMuMT(self, lp):
+        if 'Loose' in lp:        
+            muvar = sortedlist(self.getMuVar(self.selectLooseMuIdx()))
+        else:
+            muvar = sortedlist(self.getMuVar(self.selectTightMuIdx()))
         return MT(muvar[0]['pt'], muvar[0]['phi'], self.tr.MET_pt, self.tr.MET_phi) if len(muvar) else 0
 
-    def getLooseEleMT(self):
-        elevar = sortedlist(self.getEleVar(self.selectLooseEleIdx()))
+    def getEleMT(self, lp):
+        if 'Loose' in lp:
+            elevar = sortedlist(self.getEleVar(self.selectLooseEleIdx()))
+        else:
+            elevar = sortedlist(self.getEleVar(self.selectTightEleIdx()))
         return MT(elevar[0]['pt'], elevar[0]['phi'], self.tr.MET_pt, self.tr.MET_phi) if len(elevar) else 0
         
     def getMuVar(self, muId):
@@ -108,11 +128,25 @@ class RegSel():
             if self.muonSelector(pt=self.tr.Muon_pt[i], eta=self.tr.Muon_eta[i],iso=self.tr.Muon_pfRelIso03_all[i], dxy=self.tr.Muon_dxy[i], dz=self.tr.Muon_dz[i], Id=self.tr.Muon_looseId[i], lepton_selection='looseHybridIso'):
                 idx.append(i)
         return idx
+
+    def selectTightMuIdx(self):
+        idx = []
+        for i in range(len(self.tr.Muon_pt)):
+            if self.muonSelector(pt=self.tr.Muon_pt[i], eta=self.tr.Muon_eta[i],iso=self.tr.Muon_pfRelIso03_all[i], dxy=self.tr.Muon_dxy[i], dz=self.tr.Muon_dz[i], Id=self.tr.Muon_looseId[i], lepton_selection='HybridIso'):
+                idx.append(i)
+        return idx
     
     def selectLooseEleIdx(self):
         idx = []
         for i in range(len(self.tr.Electron_pt)):
             if self.eleSelector(pt=self.tr.Electron_pt[i], eta=self.tr.Electron_eta[i], iso=self.tr.Electron_pfRelIso03_all[i], dxy=self.tr.Electron_dxy[i], dz=self.tr.Electron_dz[i], Id=self.tr.Electron_vidNestedWPBitmap[i],lepton_selection='looseHybridIso'):
+                idx.append(i)              
+	return idx
+
+    def selectTightEleIdx(self):
+        idx = []
+        for i in range(len(self.tr.Electron_pt)):
+            if self.eleSelector(pt=self.tr.Electron_pt[i], eta=self.tr.Electron_eta[i], iso=self.tr.Electron_pfRelIso03_all[i], dxy=self.tr.Electron_dxy[i], dz=self.tr.Electron_dz[i], Id=self.tr.Electron_vidNestedWPBitmap[i],lepton_selection='HybridIso'):
                 idx.append(i)              
 	return idx
     
@@ -176,7 +210,7 @@ class RegSel():
                         and iso < 0.2 \
                         and abs(dxy)       < 0.02 \
                         and abs(dz)        < 0.1 \
-                        and self.eleID(Id,1)
+                        and eleVID(Id,1, removedCuts=['pfRelIso03_all'])
 
         elif lepton_selection == 'looseHybridIso':
             def func():
@@ -200,7 +234,7 @@ class RegSel():
                 return \
                     pt >5 \
                     and abs(eta)       < 2.5 \
-                    and self.eleID(Id,1)
+                    and eleVID(Id,1, removedCuts=['pfRelIso03_all'])
         return func()  
   
     def loosepasstight(self, idx, lep):

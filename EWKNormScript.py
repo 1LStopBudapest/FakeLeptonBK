@@ -7,7 +7,7 @@ from Sample.SampleChain import SampleChain
 from Sample.Dir import plotDir
 from Sample.FileList_Fake_2016_janik  import samples as samples_2016
 
-samplesRun = ['QCD', 'WJetsToLNu_comb', 'TTSingleLep_pow', 'TTLep_pow', 'DoubleMuon_Data']
+samplesRun = ['TTSingleLep_pow', 'TTLep_pow', 'WJetsToLNu_comb', 'QCD', 'DoubleMuon_Data']
 fileperjobMC = 1 
 fileperjobData = 1
 TotJobs = 4
