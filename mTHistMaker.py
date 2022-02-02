@@ -91,13 +91,14 @@ if isinstance(samplelist[samples][0], types.ListType):
                 lumiscale = 1.0
                 MCcorr = 1.0
             else:
-                lumiscale = (DataLumi/1000.0) * ch.weight
+                #lumiscale = (DataLumi/1000.0) * ch.weight
+                lumiscale = 0.007492230 * ch.weight
                 MCcorr = MCWeight(ch, year,s).getPUWeight()
             getSel = RegSel(ch, isData, year)
-            msrReg = getSel.Msrlepcut(lepOpt) and getSel.MsrJetGoodCleancut()
+            EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut()
             passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)  
-            if msrReg and passTrig:
-                mt    = getSel.MsrMT(lepOpt)
+            if EWKReg and passTrig:
+                mt    = getSel.MsrMT(lepOpt, lp='Tight')
                 Fill1D(histos['MT'], mt, lumiscale * MCcorr)
 
         hfile.Write()
@@ -136,13 +137,14 @@ else:
             lumiscale = 1.0
             MCcorr = 1.0
         else:
-            lumiscale = (DataLumi/1000.0) * ch.weight
+            #lumiscale = (DataLumi/1000.0) * ch.weight
+            lumiscale = 0.007492230 * ch.weight
             MCcorr = MCWeight(ch, year,sample).getPUWeight()
         getSel = RegSel(ch, isData, year)
-        msrReg = getSel.Msrlepcut(lepOpt) and getSel.MsrJetGoodCleancut()
+        EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut()
         passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt) 
-        if msrReg and passTrig:
-            mt    = getSel.MsrMT(lepOpt)
+        if EWKReg and passTrig:
+            mt    = getSel.MsrMT(lepOpt, lp='Tight')
             Fill1D(histos['MT'], mt, lumiscale * MCcorr)
 
     hfile.Write()

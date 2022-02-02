@@ -46,7 +46,7 @@ for sl in samplelists:
 
 if dofit:
     #StackHists(files, samplelists, 'MT', plotDir, 'FRmTHistFiles', scaleOption='AreaScaling')
-    #StackHists(files, samplelists, 'MT', plotDir, 'FRmTHistFiles')
+    StackHists(files, samplelists, 'MT', plotDir, 'FRmTHistFiles')
 
     hs=[]
     for i, f in enumerate(files,0):
@@ -83,7 +83,7 @@ if dofit:
     templateFit = ROOT.TFractionFitter(h_data, mc)
     for i in xrange(2):
         templateFit.Constrain(i,0.0,1.0)
-    templateFit.SetRangeX(60,100)
+    templateFit.SetRangeX(60,200)
     ROOT.SetOwnership( templateFit, False )
     status = templateFit.Fit()
     
