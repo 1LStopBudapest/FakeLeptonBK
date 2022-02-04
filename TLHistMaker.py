@@ -21,7 +21,7 @@ def get_parser():
     '''
     import argparse
     argParser = argparse.ArgumentParser(description = "Argument parser")
-    argParser.add_argument('--sample',           action='store',                     type=str,            default='DoubleMuon_Run2016B',                                help="Which sample?" )
+    argParser.add_argument('--sample',           action='store',                     type=str,            default='WJetsToLNu_comb',                                help="Which sample?" )
     argParser.add_argument('--year',             action='store',                     type=int,            default=2016,                                             help="Which year?" )
     argParser.add_argument('--startfile',        action='store',                     type=int,            default=0,                                                help="start from which root file like 0th or 10th etc?" )
     argParser.add_argument('--nfiles',           action='store',                     type=int,            default=-1,                                               help="No of files to run. -1 means all files" )
@@ -75,15 +75,14 @@ if isinstance(samplelist[samples][0], types.ListType):
 
         ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
         print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-        n_entries = ch.GetEntries()
+        #n_entries = ch.GetEntries()
+        n_entries = 10000
         nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
         print 'Running over total events: ', nevtcut+1
         for ientry in range(n_entries):
             if ientry > nevtcut: break
             if ientry % (nevtcut/10)==0 : print 'processing ', ientry,'th event'
             ch.GetEntry(ientry)
-
-            '''                                                                                                                                                                      if isData and lepOpt == 'Mu' and 'DoubleMuon' in samples and muon_pt > 30 : continue                                                                                    if isData and lepOpt == 'Mu' and 'SingleMuon' in samples and muon_pt <= 30 : continue                                                                                   if isData and lepOpt == 'Ele' and 'JetHT' in samples and ele_pt > 12 : continue                                                                                         if isData and lepOpt == 'Ele' and 'DoubleEG' in samples and ele_pt <= 12 : continue                                                                                     '''
             getSel = RegSel(ch, isData, year)
             msrReg = getSel.MsrmntReg(lepOpt)
             passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)
@@ -91,20 +90,25 @@ if isinstance(samplelist[samples][0], types.ListType):
                 if isData:
                     lumiscale = 1.0
                     MCcorr = 1.0
-                    EWKNorm = 1.0
+                    #EWKNorm = 1.0
                 else:
-                    lumiscale = (DataLumi/1000.0) * ch.weight
-                    MCcorr = MCWeight(ch, year,s).getPUWeight()
-                    EWKNorm = float(MCWeight(ch, year,s).getEWKNorm())
+                    lumiscale = (DataLumi) * ch.weight
+                    MCcorr = (MCWeight(ch, year,s).getPUWeight()) * get_PU_ratio(ch.PV_npvsGood)
+                    print ch.PV_npvsGood , get_PU_ratio(ch.PV_npvsGood)
+                    #EWKNorm = float(MCWeight(ch, year,s).getEWKNorm())
                 lepid = getSel.getLooseLep(lepOpt)['idx']
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
                 if abs(lepeta)<=etaBinning[1]:
-                    if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
-                    if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
+                    #if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
+                    #if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
+                    if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr )
+                    if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr)
                 if abs(lepeta)>=etaBinning[2]:
-                    if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
-                    if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
+                    #if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
+                    #if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
+                    if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr )
+                    if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr)
                      
         hfile.Write()
 
@@ -122,15 +126,14 @@ else:
     histos['TLLepPt_num_ecp'] = HistInfo(hname = 'TLLepPt_num_ecp', sample = histext, binning=ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
     ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-    n_entries = ch.GetEntries()
+    #n_entries = ch.GetEntries()
+    n_entries = 10000
     nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
     print 'Running over total events: ', nevtcut+1
     for ientry in range(n_entries):
         if ientry > nevtcut: break
         if nevtcut>10 and ientry % (nevtcut/10)==0 : print 'processing ', ientry,'th event'
         ch.GetEntry(ientry)
-
-        '''                                                                                                                                                                      if isData and lepOpt == 'Mu' and 'DoubleMuon' in samples and muon_pt > 30 : continue                                                                                    if isData and lepOpt == 'Mu' and 'SingleMuon' in samples and muon_pt <= 30 : continue                                                                                   if isData and lepOpt == 'Ele' and 'JetHT' in samples and ele_pt > 12 : continue                                                                                         if isData and lepOpt == 'Ele' and 'DoubleEG' in samples and ele_pt <= 12 : continue                                                                                     '''
         getSel = RegSel(ch, isData, year)
         msrReg = getSel.MsrmntReg(lepOpt)
         passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)
@@ -138,19 +141,25 @@ else:
             if isData:
                 lumiscale = 1.0
                 MCcorr = 1.0
-                EWKNorm = 1.0
+                #EWKNorm = 1.0
             else:
-                lumiscale = (DataLumi/1000.0) * ch.weight
-                MCcorr = MCWeight(ch, year,sample).getPUWeight()
-                EWKNorm = float(MCWeight(ch, year,sample).getEWKNorm())
+                lumiscale = (DataLumi) * ch.weight
+                MCcorr = (MCWeight(ch, year,sample).getPUWeight()) * get_PU_ratio(ch.PV_npvsGood)
+                print ch.PV_npvsGood , get_PU_ratio(ch.PV_npvsGood)
+                #EWKNorm = float(MCWeight(ch, year,sample).getEWKNorm())
             lepid = getSel.getLooseLep(lepOpt)['idx']
             lepPt = getSel.getLooseLep(lepOpt)['pt']
             lepeta = getSel.getLooseLep(lepOpt)['eta']
             if abs(lepeta)<=etaBinning[1]:
-                if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
-                if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
+                #if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
+                #if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
+                if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr )
+                if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr)
             if abs(lepeta)>=etaBinning[2]:
-                if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
-                if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
+                #if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
+                #if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
+                if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr )
+                if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr)
+
                 
     hfile.Write()
