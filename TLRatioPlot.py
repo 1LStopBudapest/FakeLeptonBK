@@ -9,6 +9,8 @@ from Sample.Dir import plotDir
 from Helper.PlotHelper import *
 from Helper.Style import *
 
+import numpy as np
+
 def get_parser():
     ''' Argument parser.                                                                                                                                                 
     '''
@@ -25,10 +27,10 @@ def get_parser():
         '-c', '--channel',           action='store',                    type=str,            default='Muon',
     )
     argParser.add_argument(
-        '-s', '--sample',           action='store',                    type=str,            default='QCD',
+        '-s', '--sample',           action='store',                    type=str,            default='DoubleMuon_Data',
     )
     argParser.add_argument(
-        '-b', '--isSingle',           action='store',                   type=bool,            default=True,
+        '-b', '--isSingle',           action='store',                   type=bool,            default=False,
     )
 
     return argParser
@@ -59,10 +61,10 @@ if isSingleSample:
         hst.append(f.Get('TLLepPt_den_brl_'+sample))
         hst.append(f.Get('TLLepPt_num_ecp_'+sample))
         hst.append(f.Get('TLLepPt_den_ecp_'+sample))
-    
+
 else:    
     files = []
-
+    print 'here1'
     for sl in samplelists:
         if os.path.exists('TLHist_'+lepOpt+'_'+sl+'.root'):
             files.append(ROOT.TFile.Open('TLHist_'+lepOpt+'_'+sl+'.root'))
@@ -72,19 +74,39 @@ else:
             doplots = False        
             print 'Root files for',lepOpt,'channel and for',sl,'sample soes not exist. Please run python TLHistMaker.py --sample',sl,'--channel',lepOpt
 
-    if len(f)!=0:
+    if len(files)!=0:
         hst=[]
+        hsEWK=[]
+        hsd=[]
+        hsEWK.append(files[0].Get('TLLepPt_num_brl_'+samplelists[0]))
+        hsEWK.append(files[0].Get('TLLepPt_den_brl_'+samplelists[0]))
+        hsEWK.append(files[0].Get('TLLepPt_num_ecp_'+samplelists[0]))
+        hsEWK.append(files[0].Get('TLLepPt_den_ecp_'+samplelists[0]))
         for i, f in enumerate(files,0):
-            hs=[]
-            hs.append(f.Get('TLLepPt_num_brl_'+samplelists[i]))
-            hs.append(f.Get('TLLepPt_den_brl_'+samplelists[i]))
-            hs.append(f.Get('TLLepPt_num_ecp_'+samplelists[i]))
-            hs.append(f.Get('TLLepPt_den_ecp_'+samplelists[i]))
-            hst.append(hs)
+            if i==0:continue
+            elif i==len(files)-1:
+                hsd.append(f.Get('TLLepPt_num_brl_'+samplelists[i]))
+                hsd.append(f.Get('TLLepPt_den_brl_'+samplelists[i]))
+                hsd.append(f.Get('TLLepPt_num_ecp_'+samplelists[i]))
+                hsd.append(f.Get('TLLepPt_den_ecp_'+samplelists[i]))
+            else:
+                hsEWK[0].Add(f.Get('TLLepPt_num_brl_'+samplelists[i]))
+                hsEWK[1].Add(f.Get('TLLepPt_den_brl_'+samplelists[i]))
+                hsEWK[2].Add(f.Get('TLLepPt_num_ecp_'+samplelists[i]))
+                hsEWK[3].Add(f.Get('TLLepPt_den_ecp_'+samplelists[i]))
+
+        if len(hsEWK)!=len(hsd): print 'Check above histogram access method again, something is wrong!!'            
+        for i in range(len(hsd)):
+            h = hsd[i].Clone(hsd[i].GetName())
+            h.Add(hsEWK[i], -1)
+            hst.append(h)
             
-if doplots :
-    hRatio = getRatioHist(hnum, hden, "FakeRate", lepOpt+'pt', 0.6)
-    c = ROOT.TCanvas('c', '', 600, 800)
-    hRatio.Draw("PE")
-    c.SaveAs('FakeRate_'+lepOpt+'_'+sample+".png")
-    c.Close()
+if doplots:
+    outputDir = os.getcwd()
+    
+    hRatio_b = getRatioHist(hst[0], hst[1], "TLRatio_Barel_"+lepOpt, "FakeRate", lepOpt+'pt', 1.0)
+    hRatio_e = getRatioHist(hst[2], hst[3], "TLRatio_Endcap_"+lepOpt, "FakeRate", lepOpt+'pt', 1.0)
+    Plot1D(hRatio_b, outputDir, drawOption="text")
+    Plot1D(hRatio_e, outputDir, drawOption="text")
+
+

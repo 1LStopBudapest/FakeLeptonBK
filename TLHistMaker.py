@@ -98,11 +98,11 @@ if isinstance(samplelist[samples][0], types.ListType):
                     EWKNorm = float(MCWeight(ch, year,s).getEWKNorm())
                 lepid = getSel.getLooseLep(lepOpt)['idx']
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
-                lepPt = getSel.getLooseLep(lepOpt)['eta']
-                if abs(lepPt)<=etaBinning[1]:
+                lepeta = getSel.getLooseLep(lepOpt)['eta']
+                if abs(lepeta)<=etaBinning[1]:
                     if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
                     if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
-                if abs(lepPt)>=etaBinning[2]:
+                if abs(lepeta)>=etaBinning[2]:
                     if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
                     if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
                      
@@ -145,11 +145,11 @@ else:
                 EWKNorm = float(MCWeight(ch, year,sample).getEWKNorm())
             lepid = getSel.getLooseLep(lepOpt)['idx']
             lepPt = getSel.getLooseLep(lepOpt)['pt']
-            lepPt = getSel.getLooseLep(lepOpt)['eta']
-            if abs(lepPt)<=etaBinning[1]:
+            lepeta = getSel.getLooseLep(lepOpt)['eta']
+            if abs(lepeta)<=etaBinning[1]:
                 if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
                 if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
-            if abs(lepPt)>=etaBinning[2]:
+            if abs(lepeta)>=etaBinning[2]:
                 if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
                 if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
                 

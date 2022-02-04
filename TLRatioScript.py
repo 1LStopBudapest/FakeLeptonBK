@@ -64,7 +64,7 @@ for sL in samplesRun:
     bashline.append('mv TLHist_%s_%s.root %s\n'%(lepOpt, sL, Rootfilesdirpath))
 
 l = str(" ".join(s for s in samplesRun))
-#bashline.append('python  FRStackPlot.py -l %s -c %s'%(l, channel))
+#bashline.append('python TLRatioPlot.py -l %s -c %s'%(l, channel))
     
 fsh = open("TLRatio.sh", "w")
 fsh.write(''.join(bashline))
