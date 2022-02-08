@@ -33,20 +33,23 @@ class RegSel():
     def MsrMTcut(self, lep):
         MT = self.getMuMT('Loose') if lep=='Mu' else self.getLooseEleMT('Loose')
         return MT<40   # return true if mt < 40 and false if mt>=40 it was 30
-        #return MT<1000
+        
+    def Msrlepcut(self, lep):
+        return len(self.selectLooseMuIdx())==1 if lep=='Mu' else len(self.selectLooseEleIdx()) == 1 #true if len is >=1 for Janik only =1
 
+    def MsrJetGoodCleancut(self):
+        return len(self.selectLepCleanGoodJetIdx(lp='Loose'))>=1
+    
     def MsrMT(self, lep, lp='Loose'):
         MT = self.getMuMT(lp) if lep=='Mu' else self.getEleMT(lp)
         return MT
 
-    def Msrlepcut(self, lep):
-        return len(self.selectLooseMuIdx())==1 if lep=='Mu' else len(self.selectLooseEleIdx()) == 1 #true if len is >=1 for Janik only =1
+    def EWKMTcut(self, lep):
+        MT = self.getMuMT('Tight') if lep=='Mu' else self.getEleMT('Tight')
+        return MT>=40   
 
     def EWKlepcut(self, lep):
         return len(self.selectTightMuIdx())==1 if lep=='Mu' else len(self.selectTightEleIdx()) == 1 #true if len is >=1 for Janik only =1
-    
-    def MsrJetGoodCleancut(self):
-        return len(self.selectLepCleanGoodJetIdx(lp='Loose'))>=1
 
     def EWKJetGoodCleancut(self):
         return len(self.selectLepCleanGoodJetIdx(lp='Tight'))>=1 
@@ -76,16 +79,25 @@ class RegSel():
         return idx
     
     
-    def getLooseMu(self):
-        muvarL = sortedlist(self.getMuVar(self.selectLooseMuIdx())) # sort from high to small according to pt in varCalc.py
+    def getMu(self, lp):
+        if 'Loose' in lp:
+            muvarL = sortedlist(self.getMuVar(self.selectLooseMuIdx())) # sort from high to small according to pt in varCalc.py
+        else:
+            muvarL = sortedlist(self.getMuVar(self.selectTightMuIdx())) 
         return muvarL[0]
         
-    def getLooseEle(self):
-        elevarL = sortedlist(self.getEleVar(self.selectLooseEleIdx()))
+    def getEle(self, lp):
+        if 'Loose' in lp:
+            elevarL = sortedlist(self.getEleVar(self.selectLooseEleIdx()))
+        else:
+            elevarL = sortedlist(self.getEleVar(self.selectTightEleIdx()))
         return elevarL[0]
 
     def getLooseLep(self, lep):
-        return self.getLooseMu() if lep=='Mu' else self.getLooseEle()
+        return self.getMu('Loose') if lep=='Mu' else self.getEle('Loose')
+
+    def getTightLep(self, lep):
+        return self.getMu('Tight') if lep=='Mu' else self.getEle('Tight')
     
     
     def getMuMT(self, lp):

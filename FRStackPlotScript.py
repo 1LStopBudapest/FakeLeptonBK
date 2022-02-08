@@ -7,8 +7,8 @@ from Sample.SampleChain import SampleChain
 from Sample.Dir import plotDir
 from Sample.FileList_Fake_2016_janik  import samples as samples_2016
 
-#samplesRun = [ 'DYJetsToLL', 'WJetsToLNu_comb' , 'TTbar' , 'TTLep_pow' , 'TTSingleLep_pow' , 'QCD', 'DoubleMuon_Data']
-samplesRun = ['QCD', 'WJetsToLNu_comb' , 'DoubleMuon_Data']
+samplesRun = [ 'DYJetsToLL', 'WJetsToLNu_comb', 'TTLep_pow' , 'TTSingleLep_pow' , 'QCD', 'DoubleMuon_Data']
+#samplesRun = ['QCD', 'WJetsToLNu_comb' , 'DoubleMuon_Data']
 fileperjobMC = 1 
 fileperjobData = 1
 TotJobs = 4
@@ -70,5 +70,5 @@ fsh.write(''.join(bashline))
 fsh.close()
 os.system('chmod 744 parallelStackHist.sh')
 os.system('./parallelStackHist.sh')
-os.system('mv *.root parallelJobsubmit.txt parallelStackHist.sh ../../../fake_rate_results/root_txt_sh_files/')
+#os.system('mv *.root parallelJobsubmit.txt parallelStackHist.sh ../../../fake_rate_results/root_txt_sh_files/')
 

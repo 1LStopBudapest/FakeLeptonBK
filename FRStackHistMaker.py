@@ -54,16 +54,20 @@ else:
     samplelist = samples_2018
     DataLumi = SampleChain.luminosity_2018
 
-
-ptBinning = [3.5, 5, 12, 20, 30, 50,200]
-#metBinning= [10, 0, 1000]
-metBinning= [0.0, 100 , 200 , 300 , 400 , 500 , 600,700,800,900,1000]
-#mtBinning=  [10, 0, 1000]
-mtBinning=  [0.0, 100 , 200 , 300 , 400 , 500 , 600,700,800,900,1000]
+'''
+ptBinning = [3.5, 5, 12, 20, 30, 50, 200]
+metBinning= [0.0, 50, 100 , 150, 200, 500, 1000]
+mtBinning=  [0.0, 40, 60, 70, 80, 90, 100, 150, 500, 1000]
 muon_etaBinning= [-2.4,-2,-1.6,-1.2,-0.8,-0.4,0,0.4,0.8,1.2,1.6,2,2.4]
 ele_etaBinning= [-2.5,-2,-1.5,-1.0,0,0.5,1,1.5,2,2.5]
-#vtxBinning= [10, 0, 50]
 vtxBinning= [0.0 , 10 , 20 , 30, 40 , 50]
+'''
+ptBinning = [100, 0, 200]
+metBinning= [100, 0, 1000]
+mtBinning=  [100, 0, 500]
+etaBinning= [50, -2.5, 2.5]
+vtxBinning= [50, 0, 50]
+
 
 
 histext = ''
@@ -73,14 +77,13 @@ if 'T2tt' in samples:
     print 'running over: ', sample
     hfile = ROOT.TFile( 'FRStackHist_'+lepOpt+'_'+sample+'_%i_%i'%(options.startfile+1, options.startfile + options.nfiles)+'.root', 'RECREATE')
     histos = {}
-    histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['MET'] = HistInfo(hname = 'MET', sample = histext, binning = metBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['MT'] = HistInfo(hname = 'MT', sample = histext, binning = mtBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['Mu_Eta'] = HistInfo(hname = 'Mu_Eta', sample = histext, binning = muon_etaBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['Ele_Eta'] = HistInfo(hname = 'Ele_Eta', sample = histext, binning = ele_etaBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['Pgoodvtx_number'] = HistInfo(hname = 'Pgoodvtx_number', sample = histext, binning = vtxBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    
+    histos['MET'] = HistInfo(hname = 'MET', sample = histext, binning = metBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['MT'] = HistInfo(hname = 'MT', sample = histext, binning = mtBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['Pgoodvtx_number'] = HistInfo(hname = 'Pgoodvtx_number', sample = histext, binning = vtxBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['LepEta'] = HistInfo(hname = 'LepEta', sample = histext, binning = etaBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['LepPt'] = HistInfo(hname = 'LepPt', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+
     ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
     n_entries = ch.GetEntries()
@@ -102,28 +105,26 @@ if 'T2tt' in samples:
             MCcorr = 1.0
         else:
             #lumiscale = (DataLumi/1000.0) * ch.weight
-            lumiscale =  ch.weight
-            MCcorr = MCWeight(ch, year,s).getTotalWeight()
+            lumiscale =  DataLumi * ch.weight
+            MCcorr = MCWeight(ch, year,s).getPUWeight() * get_PU_ratio(ch.PV_npvsGood)
         getSel = RegSel(ch, isData, year)
-        msrReg = getSel.MsrmntReg(lepOpt)
+        #msrReg = getSel.MsrmntReg(lepOpt)
+        EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt)
         passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)  # before .passFakeRateJetTrig() if isData else True
-        if msrReg and passTrig:
-            lepPt = getSel.getLooseLep(lepOpt)['pt']
+        if EWKReg and passTrig:
             lepid = getSel.getLooseLep(lepOpt)['idx']
+            lepPt = getSel.getTightLep(lepOpt)['pt']
+            lepeta = getSel.getTightLep(lepOpt)['eta']
             met   = ch.MET_pt
-            mt    = getSel.MsrMT(lepOpt)
-            muon_eta = ch.Muon_eta
-            ele_eta = ch.Electron_eta
+            mt    = getSel.MsrMT(lepOpt, 'Tight')
             npgood_vtx = ch.PV_npvsGood
-            print(lepPt , '  ', met , '  ',mt, '  ',muon_eta, '  ',ele_eta, '  ',npgood_vtx)
-            Fill1D(histos['LepPt_loose'], lepPt, lumiscale * MCcorr)
             Fill1D(histos['MET'], met, lumiscale * MCcorr)
             Fill1D(histos['MT'], mt, lumiscale * MCcorr)
-            Fill1D(histos['Mu_Eta'], muon_eta, lumiscale * MCcorr)
-            Fill1D(histos['Ele_Eta'], ele_eta, lumiscale * MCcorr)
             Fill1D(histos['Pgoodvtx_number'], npgood_vtx, lumiscale * MCcorr)
-            if getSel.loosepasstight(lepid, lepOpt):
-                Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
+            Fill1D(histos['LepEta'], lepeta, lumiscale * MCcorr)
+            Fill1D(histos['LepPt'], lepPt, lumiscale * MCcorr)
+            #if getSel.loosepasstight(lepid, lepOpt):
+                #Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
     hfile.Write()
 
 elif isinstance(samplelist[samples][0], types.ListType):
@@ -133,13 +134,12 @@ elif isinstance(samplelist[samples][0], types.ListType):
         print 'running over: ', sample
         hfile = ROOT.TFile( 'FRStackHist_'+lepOpt+'_'+sample+'_%i_%i'%(options.startfile+1, options.startfile + options.nfiles)+'.root', 'RECREATE')
         histos = {}
-        histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-        histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-        histos['MET'] = HistInfo(hname = 'MET', sample = histext, binning = metBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-        histos['MT'] = HistInfo(hname = 'MT', sample = histext, binning = mtBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-        histos['Mu_Eta'] = HistInfo(hname = 'Mu_Eta', sample = histext, binning = muon_etaBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-        histos['Ele_Eta'] = HistInfo(hname = 'Ele_Eta', sample = histext, binning = ele_etaBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-        histos['Pgoodvtx_number'] = HistInfo(hname = 'Pgoodvtx_number', sample = histext, binning = vtxBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
+        histos['MET'] = HistInfo(hname = 'MET', sample = histext, binning = metBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['MT'] = HistInfo(hname = 'MT', sample = histext, binning = mtBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['Pgoodvtx_number'] = HistInfo(hname = 'Pgoodvtx_number', sample = histext, binning = vtxBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['LepEta'] = HistInfo(hname = 'LepEta', sample = histext, binning = etaBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['LepPt'] = HistInfo(hname = 'LepPt', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
         ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
         '''
         if isData:
@@ -169,28 +169,26 @@ elif isinstance(samplelist[samples][0], types.ListType):
                 MCcorr = 1.0
             else:
                 #lumiscale = (DataLumi/1000.0) * ch.weight
-                lumiscale =  ch.weight
-                MCcorr = MCWeight(ch, year,s).getTotalWeight()
+                lumiscale =  DataLumi * ch.weight
+                MCcorr = MCWeight(ch, year,s).getPUWeight() * get_PU_ratio(ch.PV_npvsGood)
             getSel = RegSel(ch, isData, year)
-            msrReg = getSel.MsrmntReg(lepOpt)
+            #msrReg = getSel.MsrmntReg(lepOpt)
+            EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt)
             passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)  # before .passFakeRateJetTrig() if isData else True
-            if msrReg and passTrig:
-                lepPt = getSel.getLooseLep(lepOpt)['pt']
+            if EWKReg and passTrig:
                 lepid = getSel.getLooseLep(lepOpt)['idx']
+                lepPt = getSel.getTightLep(lepOpt)['pt']
+                lepeta = getSel.getTightLep(lepOpt)['eta']
                 met   = ch.MET_pt
-                mt    = getSel.MsrMT(lepOpt)
-                muon_eta = ch.Muon_eta
-                ele_eta = ch.Electron_eta
+                mt    = getSel.MsrMT(lepOpt, 'Tight')
                 npgood_vtx = ch.PV_npvsGood
-                print(lepPt , '  ', met , '  ',mt, '  ',muon_eta, '  ',ele_eta, '  ',npgood_vtx)
-                Fill1D(histos['LepPt_loose'], lepPt, lumiscale * MCcorr)
                 Fill1D(histos['MET'], met, lumiscale * MCcorr)
                 Fill1D(histos['MT'], mt, lumiscale * MCcorr)
-                Fill1D(histos['Mu_Eta'], muon_eta, lumiscale * MCcorr)
-                Fill1D(histos['Ele_Eta'], ele_eta, lumiscale * MCcorr)
                 Fill1D(histos['Pgoodvtx_number'], npgood_vtx, lumiscale * MCcorr)
-                if getSel.loosepasstight(lepid, lepOpt):
-                    Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
+                Fill1D(histos['LepEta'], lepeta, lumiscale * MCcorr)
+                Fill1D(histos['LepPt'], lepPt, lumiscale * MCcorr)
+                #if getSel.loosepasstight(lepid, lepOpt):
+                    #Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
         hfile.Write()
 
 else:
@@ -201,13 +199,12 @@ else:
     print 'running over: ', sample
     hfile = ROOT.TFile( 'FRStackHist_'+lepOpt+'_'+sample+'_%i_%i'%(options.startfile+1, options.startfile + options.nfiles)+'.root', 'RECREATE')
     histos = {}
-    histos['LepPt_loose'] = HistInfo(hname = 'LepPt_loose', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['MET'] = HistInfo(hname = 'MET', sample = histext, binning = metBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()  
-    histos['MT'] = HistInfo(hname = 'MT', sample = histext, binning = mtBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['Mu_Eta'] = HistInfo(hname = 'Mu_Eta', sample = histext, binning = muon_etaBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['Ele_Eta'] = HistInfo(hname = 'Ele_Eta', sample = histext, binning = ele_etaBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()
-    histos['Pgoodvtx_number'] = HistInfo(hname = 'Pgoodvtx_number', sample = histext, binning = vtxBinning, histclass = ROOT.TH1F, binopt = 'var').make_hist()    
+    histos['MET'] = HistInfo(hname = 'MET', sample = histext, binning = metBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['MT'] = HistInfo(hname = 'MT', sample = histext, binning = mtBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['Pgoodvtx_number'] = HistInfo(hname = 'Pgoodvtx_number', sample = histext, binning = vtxBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['LepEta'] = HistInfo(hname = 'LepEta', sample = histext, binning = etaBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['LepPt'] = HistInfo(hname = 'LepPt', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
     ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     
     '''
@@ -239,36 +236,26 @@ else:
             MCcorr = 1.0
         else:
             #lumiscale = (DataLumi/1000.0) * ch.weight
-            lumiscale =  ch.weight
-            MCcorr = MCWeight(ch, year,sample).getTotalWeight()
+            lumiscale =  DataLumi * ch.weight
+            MCcorr = MCWeight(ch, year,sample).getPUWeight() * get_PU_ratio(ch.PV_npvsGood)
         getSel = RegSel(ch, isData, year)
-        msrReg = getSel.MsrmntReg(lepOpt)
+        #msrReg = getSel.MsrmntReg(lepOpt)
+        EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt)
         passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)  # before .passFakeRateJetTrig() if isData else True
-        if msrReg and passTrig:
-            lepPt = getSel.getLooseLep(lepOpt)['pt']
+        if EWKReg and passTrig:
             lepid = getSel.getLooseLep(lepOpt)['idx']
+            lepPt = getSel.getTightLep(lepOpt)['pt']
+            lepeta = getSel.getTightLep(lepOpt)['eta']
             met   = ch.MET_pt
-            mt    = getSel.MsrMT(lepOpt)
-            if lepOpt== 'Mu' : 
-                muon_eta = getSel.getLooseLep(lepOpt)['eta']
-            else: 
-                ele_eta = getSel.getLooseLep(lepOpt)['eta']
+            mt    = getSel.MsrMT(lepOpt, 'Tight')
             npgood_vtx = ch.PV_npvsGood
-            #print(lepPt , '  ', met , '  ',mt, '  ', muon_eta , '  ',ele_eta, '  ',npgood_vtx, ' ' , lumiscale , '  ' ,  MCcorr , '  ', lumiscale * MCcorr  )
-            
-            Fill1D(histos['LepPt_loose'], lepPt, lumiscale * MCcorr)
             Fill1D(histos['MET'], met, lumiscale * MCcorr)
-           
             Fill1D(histos['MT'], mt, lumiscale * MCcorr)
-            if lepOpt== 'Mu' :
-                Fill1D(histos['Mu_Eta'], muon_eta, lumiscale * MCcorr)
-            else:
-                Fill1D(histos['Ele_Eta'], ele_eta, lumiscale * MCcorr)
             Fill1D(histos['Pgoodvtx_number'], npgood_vtx, lumiscale * MCcorr)
-            
-
-            if getSel.loosepasstight(lepid, lepOpt):
-                Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
+            Fill1D(histos['LepEta'], lepeta, lumiscale * MCcorr)
+            Fill1D(histos['LepPt'], lepPt, lumiscale * MCcorr)
+            #if getSel.loosepasstight(lepid, lepOpt):
+                #Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
                 
 
     hfile.Write()

@@ -92,8 +92,8 @@ if isinstance(samplelist[samples][0], types.ListType):
                 MCcorr = 1.0
             else:
                 #lumiscale = (DataLumi/1000.0) * ch.weight
-                lumiscale = 0.007492230 * ch.weight
-                MCcorr = MCWeight(ch, year,s).getPUWeight()
+                lumiscale = DataLumi * ch.weight #datalumi is 0.007492230 fb-1
+                MCcorr = MCWeight(ch, year,s).getPUWeight() * get_PU_ratio(ch.PV_npvsGood)
             getSel = RegSel(ch, isData, year)
             EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut()
             passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)  
@@ -138,8 +138,8 @@ else:
             MCcorr = 1.0
         else:
             #lumiscale = (DataLumi/1000.0) * ch.weight
-            lumiscale = 0.007492230 * ch.weight
-            MCcorr = MCWeight(ch, year,sample).getPUWeight()
+            lumiscale = DataLumi * ch.weight
+            MCcorr = MCWeight(ch, year,sample).getPUWeight() * get_PU_ratio(ch.PV_npvsGood)
         getSel = RegSel(ch, isData, year)
         EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut()
         passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt) 
