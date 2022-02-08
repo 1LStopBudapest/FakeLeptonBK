@@ -18,11 +18,11 @@ def get_parser():
     nargs='+',       # one or more parameters to this switch
     type=str,        # /parameters/ are ints
     dest='alist',     # store in 'list'.
-    default=['QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
+    default=['DYJetsToLL', 'WJetsToLNu_comb', 'TTLep_pow' , 'TTSingleLep_pow' , 'QCD', 'DoubleMuon_Data'],      #last sample should be data as to be consistent with StackHists funtion.
     #default=['VV', 'DYJetsToLL', 'ZJetsToNuNu', 'ST','TTSingleLep_pow', 'WJetsToLNu', 'QCD', 'JetHT_Data'],      #last sample should be data as to be consistent with StackHists funtion.
     )
     argParser.add_argument(
-        '-c', '--channel',           action='store',                    type=str,            default='Electron',
+        '-c', '--channel',           action='store',                    type=str,            default='Muon',
     )
     return argParser
 
@@ -46,11 +46,9 @@ for sl in samplelists:
         print 'Root files for',lepOpt,'channel and for',sl,'sample soes not exist. Please run python FRStackHistMaker.py --sample',sl,'--channel',lepOpt
 
 if doplots :
-    StackHists(files, samplelists, 'LepPt_loose', plotDir, 'FRMeasurementRegion')
-    StackHists(files, samplelists, 'LepPt_tight', plotDir, 'FRMeasurementRegion')
     StackHists(files, samplelists, 'MET', plotDir, 'FRMeasurementRegion')
     StackHists(files, samplelists, 'MT', plotDir, 'FRMeasurementRegion')
-    StackHists(files, samplelists, 'Mu_Eta', plotDir, 'FRMeasurementRegion')
-    StackHists(files, samplelists, 'Ele_Eta', plotDir, 'FRMeasurementRegion')
     StackHists(files, samplelists, 'Pgoodvtx_number', plotDir, 'FRMeasurementRegion')
-
+    StackHists(files, samplelists, 'LepEta', plotDir, 'FRMeasurementRegion')
+    StackHists(files, samplelists, 'LepPt', plotDir, 'FRMeasurementRegion')
+    #StackHists(files, samplelists, 'LepPt_tight', plotDir, 'FRMeasurementRegion')
