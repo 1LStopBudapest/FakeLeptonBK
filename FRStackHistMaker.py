@@ -23,7 +23,7 @@ def get_parser():
     argParser.add_argument('--startfile',        action='store',                     type=int,            default=0,                                                help="start from which root file like 0th or 10th etc?" )
     argParser.add_argument('--nfiles',           action='store',                     type=int,            default=-1,                                               help="No of files to run. -1 means all files" )
     argParser.add_argument('--nevents',           action='store',                    type=int,            default=-1,                                               help="No of events to run. -1 means all events" )
-    argParser.add_argument('--channel',           action='store',                    type=str,            default='Electron',                                       help="Which lepton?" )
+    argParser.add_argument('--channel',           action='store',                    type=str,            default='Muon',                                       help="Which lepton?" )
     argParser.add_argument('--region',            action='store',                    type=str,            default='mesurement',                                     help="Which region?" )    
     #argParser.add_argument('--pJobs',             action='store',                    type=bool,            default=False,                                           help="using GPU parallel program or not" )
 
@@ -109,7 +109,7 @@ if 'T2tt' in samples:
             MCcorr = MCWeight(ch, year,s).getPUWeight() * get_PU_ratio(ch.PV_npvsGood)
         getSel = RegSel(ch, isData, year)
         #msrReg = getSel.MsrmntReg(lepOpt)
-        EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt)
+        EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt) and getSel.EWKdphicut()
         passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)  # before .passFakeRateJetTrig() if isData else True
         if EWKReg and passTrig:
             lepid = getSel.getLooseLep(lepOpt)['idx']
@@ -140,6 +140,16 @@ elif isinstance(samplelist[samples][0], types.ListType):
         histos['LepEta'] = HistInfo(hname = 'LepEta', sample = histext, binning = etaBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
         histos['LepPt'] = HistInfo(hname = 'LepPt', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
         histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['jet1metdphi'] = HistInfo(hname = 'jet1metdphi', sample = histext, binning = [70, 0, 3.5], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['jet2metdphi'] = HistInfo(hname = 'jet2metdphi', sample = histext, binning = [70, 0, 3.5], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['jet3metdphi'] = HistInfo(hname = 'jet3metdphi', sample = histext, binning = [70, 0, 3.5], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['Njets'] = HistInfo(hname = 'Njets', sample = histext, binning = [10, 0, 10], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['jetsPt'] = HistInfo(hname = 'jetsPt', sample = histext, binning = [100, 0, 1000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['jet1Pt'] = HistInfo(hname = 'jet1Pt', sample = histext, binning = [100, 0, 1000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['jet2Pt'] = HistInfo(hname = 'jet2Pt', sample = histext, binning = [100, 0, 1000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['jet3Pt'] = HistInfo(hname = 'jet3Pt', sample = histext, binning = [100, 0, 1000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+        histos['EvtWeight'] = HistInfo(hname = 'EvtWeight', sample = histext, binning = [100, 0, 10000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+
         ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
         '''
         if isData:
@@ -173,7 +183,7 @@ elif isinstance(samplelist[samples][0], types.ListType):
                 MCcorr = MCWeight(ch, year,s).getPUWeight() * get_PU_ratio(ch.PV_npvsGood)
             getSel = RegSel(ch, isData, year)
             #msrReg = getSel.MsrmntReg(lepOpt)
-            EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt)
+            EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt) 
             passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)  # before .passFakeRateJetTrig() if isData else True
             if EWKReg and passTrig:
                 lepid = getSel.getLooseLep(lepOpt)['idx']
@@ -187,6 +197,16 @@ elif isinstance(samplelist[samples][0], types.ListType):
                 Fill1D(histos['Pgoodvtx_number'], npgood_vtx, lumiscale * MCcorr)
                 Fill1D(histos['LepEta'], lepeta, lumiscale * MCcorr)
                 Fill1D(histos['LepPt'], lepPt, lumiscale * MCcorr)
+                Fill1D(histos['jet1metdphi'], getSel.getdphi(0), lumiscale * MCcorr)
+                Fill1D(histos['jet2metdphi'], getSel.getdphi(1), lumiscale * MCcorr)
+                Fill1D(histos['jet3metdphi'], getSel.getdphi(2), lumiscale * MCcorr)
+                Fill1D(histos['Njets'], len(getSel.selectLepCleanGoodJetIdx(lp='Tight')), lumiscale * MCcorr)
+                Fill1D(histos['jet1Pt'], ch.Jet_pt[getSel.selectLepCleanGoodJetIdx(lp='Tight')[0]], lumiscale * MCcorr)
+                jet2Pt = ch.Jet_pt[getSel.selectLepCleanGoodJetIdx(lp='Tight')[1]] if len(getSel.selectLepCleanGoodJetIdx(lp='Tight')) > 1 else 0
+                jet3Pt = ch.Jet_pt[getSel.selectLepCleanGoodJetIdx(lp='Tight')[2]] if len(getSel.selectLepCleanGoodJetIdx(lp='Tight')) > 2 else 0
+                Fill1D(histos['jet2Pt'], jet2Pt, lumiscale * MCcorr)
+                Fill1D(histos['jet3Pt'], jet3Pt, lumiscale * MCcorr)
+                Fill1D(histos['EvtWeight'], ch.weight)
                 #if getSel.loosepasstight(lepid, lepOpt):
                     #Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
         hfile.Write()
@@ -205,6 +225,15 @@ else:
     histos['LepEta'] = HistInfo(hname = 'LepEta', sample = histext, binning = etaBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
     histos['LepPt'] = HistInfo(hname = 'LepPt', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
     histos['LepPt_tight'] = HistInfo(hname = 'LepPt_tight', sample = histext, binning = ptBinning, histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['jet1metdphi'] = HistInfo(hname = 'jet1metdphi', sample = histext, binning = [70, 0, 3.5], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['jet2metdphi'] = HistInfo(hname = 'jet2metdphi', sample = histext, binning = [70, 0, 3.5], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['jet3metdphi'] = HistInfo(hname = 'jet3metdphi', sample = histext, binning = [70, 0, 3.5], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['Njets'] = HistInfo(hname = 'Njets', sample = histext, binning = [10, 0, 10], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['jetsPt'] = HistInfo(hname = 'jetsPt', sample = histext, binning = [100, 0, 1000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['jet1Pt'] = HistInfo(hname = 'jet1Pt', sample = histext, binning = [100, 0, 1000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['jet2Pt'] = HistInfo(hname = 'jet2Pt', sample = histext, binning = [100, 0, 1000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['jet3Pt'] = HistInfo(hname = 'jet3Pt', sample = histext, binning = [100, 0, 1000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
+    histos['EvtWeight'] = HistInfo(hname = 'EvtWeight', sample = histext, binning = [1000, 0, 100000], histclass = ROOT.TH1F, binopt = 'norm').make_hist()
     ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     
     '''
@@ -240,7 +269,7 @@ else:
             MCcorr = MCWeight(ch, year,sample).getPUWeight() * get_PU_ratio(ch.PV_npvsGood)
         getSel = RegSel(ch, isData, year)
         #msrReg = getSel.MsrmntReg(lepOpt)
-        EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt)
+        EWKReg = getSel.EWKlepcut(lepOpt) and getSel.EWKJetGoodCleancut() and getSel.EWKTempMETcut() and getSel.EWKMTcut(lepOpt) 
         passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)  # before .passFakeRateJetTrig() if isData else True
         if EWKReg and passTrig:
             lepid = getSel.getLooseLep(lepOpt)['idx']
@@ -254,6 +283,17 @@ else:
             Fill1D(histos['Pgoodvtx_number'], npgood_vtx, lumiscale * MCcorr)
             Fill1D(histos['LepEta'], lepeta, lumiscale * MCcorr)
             Fill1D(histos['LepPt'], lepPt, lumiscale * MCcorr)
+            Fill1D(histos['jet1metdphi'], getSel.getdphi(0), lumiscale * MCcorr)
+            Fill1D(histos['jet2metdphi'], getSel.getdphi(1), lumiscale * MCcorr)
+            Fill1D(histos['jet3metdphi'], getSel.getdphi(2), lumiscale * MCcorr)
+            Fill1D(histos['Njets'], len(getSel.selectLepCleanGoodJetIdx(lp='Tight')), lumiscale * MCcorr)
+            Fill1D(histos['jet1Pt'], ch.Jet_pt[getSel.selectLepCleanGoodJetIdx(lp='Tight')[0]], lumiscale * MCcorr)
+            jet2Pt = ch.Jet_pt[getSel.selectLepCleanGoodJetIdx(lp='Tight')[1]] if len(getSel.selectLepCleanGoodJetIdx(lp='Tight')) > 1 else 0
+            jet3Pt = ch.Jet_pt[getSel.selectLepCleanGoodJetIdx(lp='Tight')[2]] if len(getSel.selectLepCleanGoodJetIdx(lp='Tight')) > 2 else 0
+            Fill1D(histos['jet2Pt'], jet2Pt, lumiscale * MCcorr)
+            Fill1D(histos['jet3Pt'], jet3Pt, lumiscale * MCcorr)
+            Fill1D(histos['EvtWeight'], ch.weight)
+            if ch.weight > 10000: print ch.weight
             #if getSel.loosepasstight(lepid, lepOpt):
                 #Fill1D(histos['LepPt_tight'], lepPt, lumiscale * MCcorr)
                 

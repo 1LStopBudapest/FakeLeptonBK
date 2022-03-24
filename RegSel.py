@@ -54,6 +54,20 @@ class RegSel():
     def EWKJetGoodCleancut(self):
         return len(self.selectLepCleanGoodJetIdx(lp='Tight'))>=1 
         
+    def EWKdphicut(self):
+        cut = True
+        if len(self.selectLepCleanGoodJetIdx(lp='Tight'))>=1:
+            if DeltaPhi(self.tr.Jet_phi[self.selectLepCleanGoodJetIdx(lp='Tight')[0]], self.tr.MET_phi) <= 0.5:
+                cut = False
+        return cut
+
+    def getdphi(self, ijet):
+        if len(self.selectLepCleanGoodJetIdx(lp='Tight')) > ijet:
+            dphi = DeltaPhi(self.tr.Jet_phi[self.selectLepCleanGoodJetIdx(lp='Tight')[ijet]], self.tr.MET_phi)
+        else:
+            dphi = 0
+        return dphi
+
     def selectLepCleanGoodJetIdx(self, lp, thrsld=40):
         if 'Loose' in lp:
             lepvarL = sortedlist(self.getLepVar(self.selectLooseMuIdx(),self.selectLooseEleIdx()))
