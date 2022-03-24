@@ -46,9 +46,16 @@ for sl in samplelists:
         print 'Root files for',lepOpt,'channel and for',sl,'sample soes not exist. Please run python FRStackHistMaker.py --sample',sl,'--channel',lepOpt
 
 if doplots :
-    StackHists(files, samplelists, 'MET', plotDir, 'FRMeasurementRegion')
-    StackHists(files, samplelists, 'MT', plotDir, 'FRMeasurementRegion')
-    StackHists(files, samplelists, 'Pgoodvtx_number', plotDir, 'FRMeasurementRegion')
-    StackHists(files, samplelists, 'LepEta', plotDir, 'FRMeasurementRegion')
-    StackHists(files, samplelists, 'LepPt', plotDir, 'FRMeasurementRegion')
+    StackHists(files, samplelists, 'MET', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'MT', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'Pgoodvtx_number', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'LepEta', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'LepPt', plotDir, 'FRMeasurementRegion', islogy=True)
     #StackHists(files, samplelists, 'LepPt_tight', plotDir, 'FRMeasurementRegion')
+    StackHists(files, samplelists, 'jet1metdphi', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'jet2metdphi', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'jet3metdphi', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'Njets', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'jet1Pt', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'jet2Pt', plotDir, 'FRMeasurementRegion', islogy=True)
+    StackHists(files, samplelists, 'jet3Pt', plotDir, 'FRMeasurementRegion', islogy=True)
