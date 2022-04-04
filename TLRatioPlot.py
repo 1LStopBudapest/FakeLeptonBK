@@ -21,7 +21,7 @@ def get_parser():
     nargs='+',       # one or more parameters to this switch
     type=str,        # /parameters/ are ints
     dest='alist',     # store in 'list'.
-    default=['WJetsToLNu_comb', 'TTSingleLep_pow', 'TTLep_pow', 'DoubleMuon_Data'],      #last sample should be data as to be consistent with StackHists funtion.
+    default=['WJetsToLNu_comb', 'TTbar', 'DoubleMuon_Data'],      #last sample should be data as to be consistent with StackHists funtion.
     )
     argParser.add_argument(
         '-c', '--channel',           action='store',                    type=str,            default='Muon',
@@ -108,5 +108,27 @@ if doplots:
     hRatio_e = getRatioHist(hst[2], hst[3], "TLRatio_Endcap_"+lepOpt, "FakeRate", lepOpt+'pt', 1.0)
     Plot1D(hRatio_b, outputDir, drawOption="text")
     Plot1D(hRatio_e, outputDir, drawOption="text")
+
+print hRatio_e.GetBinContent(3)
+TLfile = ROOT.TFile('/home/mmoussa/susy/susy_code_fake_rate/AuxFiles/h_TLratio_2D_'+lepOpt+'.root', 'RECREATE')
+pt_Binning = [3.5, 5.0, 8, 10, 15, 20, 30, 50]
+eta_Binning = [0.,1.442,1.566,3.142] 
+h_TLratio_2D = ROOT.TH2D('h_TLratio_2D' , 'Tight to Loose ratio ; P_{T} [GeV] ; #eta' , len(pt_Binning)-1 , np.array(pt_Binning) , len(eta_Binning)-1 , np.array(eta_Binning))
+for i in range(len(pt_Binning)-1):
+    h_TLratio_2D.SetBinContent(i+1,1,hRatio_b.GetBinContent(i+1))
+    h_TLratio_2D.SetBinError(i+1,1,hRatio_b.GetBinError(i+1))
+
+    h_TLratio_2D.SetBinContent(i+1,3,hRatio_e.GetBinContent(i+1))
+    h_TLratio_2D.SetBinError(i+1,3,hRatio_e.GetBinError(i+1))
+
+h_TLratio_2D.Write()
+ROOT.gStyle.SetOptStat(0)
+ROOT.gStyle.SetPaintTextFormat('1.3f')
+
+c1 = ROOT.TCanvas('c1', '' , 800,600)
+h_TLratio_2D.Draw('colz e text89')
+c1.SaveAs('TLRatio_2D.pdf')
+TLfile.Close()
+
 
 

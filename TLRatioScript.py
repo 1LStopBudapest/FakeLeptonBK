@@ -7,7 +7,8 @@ from Sample.SampleChain import SampleChain
 from Sample.Dir import plotDir
 from Sample.FileList_Fake_2016_janik  import samples as samples_2016
 
-samplesRun = ['WJetsToLNu_comb', 'TTSingleLep_pow', 'TTLep_pow', 'DoubleMuon_Data']
+#samplesRun = ['WJetsToLNu_comb', 'TTSingleLep_pow', 'TTLep_pow', 'DoubleMuon_Data']
+samplesRun = ['WJetsToLNu_comb', 'DYJetsToLL', 'TTLep_pow','TTSingleLep_pow' , 'DoubleMuon_Data']
 fileperjobMC = 1 
 fileperjobData = 1
 TotJobs = 4
@@ -64,12 +65,12 @@ for sL in samplesRun:
     bashline.append('mv TLHist_%s_%s.root %s\n'%(lepOpt, sL, Rootfilesdirpath))
 
 l = str(" ".join(s for s in samplesRun))
-#bashline.append('python TLRatioPlot.py -l %s -c %s'%(l, channel))
+bashline.append('python TLRatioPlot.py -l %s -c %s'%(l, channel))
     
 fsh = open("TLRatio.sh", "w")
 fsh.write(''.join(bashline))
 fsh.close()
 os.system('chmod 744 TLRatio.sh')
-os.system('./TLratio.sh')
-#os.system('rm *.root TLparallelJobsubmit.txt TLRatio.sh')
+os.system('./TLRatio.sh')
+os.system('mv *.root TLparallelJobsubmit.txt TLRatio.sh /home/mmoussa/susy/fake_rate_results/root_txt_sh_files_TLRatio/')
 
