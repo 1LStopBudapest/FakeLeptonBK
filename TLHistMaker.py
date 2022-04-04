@@ -48,7 +48,7 @@ DataLumi=1.0
 
 if year==2016:
     samplelist = samples_2016
-    DataLumi = SampleChain.luminosity_2016
+    DataLumi = SampleChain.luminosity_2016_forTL
 elif year==2017:
     samplelist = samples_2017
     DataLumi = SampleChain.luminosity_2017
@@ -56,8 +56,8 @@ else:
     samplelist = samples_2018 
     DataLumi = SampleChain.luminosity_2018
     
-ptBinning = [3.5, 5, 12, 20, 30, 50, 80, 200]
-etaBinning = [0.0, 1.442, 1.566, 2.5]
+ptBinning = [3.5, 5.0, 8, 10, 15, 20, 30, 50]
+etaBinning = [0.,1.442,1.566,3.142]
 
 histext = ''
 
@@ -76,7 +76,7 @@ if isinstance(samplelist[samples][0], types.ListType):
         ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
         print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
         #n_entries = ch.GetEntries()
-        n_entries = 10000
+        n_entries = 1000
         nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
         print 'Running over total events: ', nevtcut+1
         for ientry in range(n_entries):
@@ -85,30 +85,40 @@ if isinstance(samplelist[samples][0], types.ListType):
             ch.GetEntry(ientry)
             getSel = RegSel(ch, isData, year)
             msrReg = getSel.MsrmntReg(lepOpt)
-            passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)
+            passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig_TL_oneTrig(lepOpt)
             if msrReg and passTrig:
+                lepid = getSel.getLooseLep(lepOpt)['idx']
                 if isData:
                     lumiscale = 1.0
                     MCcorr = 1.0
                     #EWKNorm = 1.0
                 else:
+                    '''
+                    # for checking janik values
+                    lumiscale = (1.0) * ch.weight
+                    MCcorr = get_PU_weight_janik(ch.PV_npvsGood)
+                    #print ch.PV_npvsGood , get_PU_weight(ch.PV_npvsGood)
+                    EWKNorm = 0.000163
+                    '''
                     lumiscale = (DataLumi) * ch.weight
-                    MCcorr = (MCWeight(ch, year,s).getPUWeight()) * get_PU_ratio(ch.PV_npvsGood)
-                    print ch.PV_npvsGood , get_PU_ratio(ch.PV_npvsGood)
-                    #EWKNorm = float(MCWeight(ch, year,s).getEWKNorm())
-                lepid = getSel.getLooseLep(lepOpt)['idx']
+                    MCcorr = get_PU_weight(ch.Pileup_nTrueInt)
+                    if lepOpt == 'Mu':
+                        lep_promptflag = ord(ch.Muon_genPartFlav[lepid])
+                        if lep_promptflag not in [ 1 , 15 ] : continue
+                    else:
+                        lep_promptflag = ord(ch.Electron_genPartFlav[lepid])
+                        if lep_promptflag not in [ 1 , 15 ] : continue
+                        
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
-                if abs(lepeta)<=etaBinning[1]:
-                    #if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
-                    #if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
+                if abs(lepeta)>=etaBinning[0] and abs(lepeta)<=etaBinning[1]:
                     if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr )
-                    if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr)
-                if abs(lepeta)>=etaBinning[2]:
-                    #if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
-                    #if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
-                    if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr )
+                    if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr )
+                    
+                if abs(lepeta)>=etaBinning[2] and abs(lepeta)<=etaBinning[3]:
+                    if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr)
                     if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr)
+                    
                      
         hfile.Write()
 
@@ -127,7 +137,7 @@ else:
     ch = SampleChain(sample, options.startfile, options.nfiles, year, 'fake').getchain()
     print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
     #n_entries = ch.GetEntries()
-    n_entries = 10000
+    n_entries = 1000
     nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
     print 'Running over total events: ', nevtcut+1
     for ientry in range(n_entries):
@@ -136,30 +146,41 @@ else:
         ch.GetEntry(ientry)
         getSel = RegSel(ch, isData, year)
         msrReg = getSel.MsrmntReg(lepOpt)
-        passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig(lepOpt)
+        passTrig = TrigVarSel(ch, sample).passFakeRateLepTrig_TL_oneTrig(lepOpt)
         if msrReg and passTrig:
+            lepid = getSel.getLooseLep(lepOpt)['idx']
             if isData:
                 lumiscale = 1.0
                 MCcorr = 1.0
                 #EWKNorm = 1.0
             else:
+                '''
+                # for checking janik values
+                lumiscale = (1.0) * ch.weight
+                MCcorr = get_PU_weight_janik(ch.PV_npvsGood)
+                #print ch.PV_npvsGood , get_PU_weight(ch.PV_npvsGood)
+                EWKNorm = 0.000163
+                '''
                 lumiscale = (DataLumi) * ch.weight
-                MCcorr = (MCWeight(ch, year,sample).getPUWeight()) * get_PU_ratio(ch.PV_npvsGood)
-                print ch.PV_npvsGood , get_PU_ratio(ch.PV_npvsGood)
-                #EWKNorm = float(MCWeight(ch, year,sample).getEWKNorm())
-            lepid = getSel.getLooseLep(lepOpt)['idx']
+                MCcorr = get_PU_weight(ch.Pileup_nTrueInt)
+                if lepOpt == 'Mu':
+                    lep_promptflag = ord(ch.Muon_genPartFlav[lepid])
+                    if lep_promptflag not in [ 1 , 15 ] : continue
+                else:
+                    lep_promptflag = ord(ch.Electron_genPartFlav[lepid])
+                    if lep_promptflag not in [ 1 , 15 ] : continue                    
+            
             lepPt = getSel.getLooseLep(lepOpt)['pt']
             lepeta = getSel.getLooseLep(lepOpt)['eta']
-            if abs(lepeta)<=etaBinning[1]:
-                #if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
-                #if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr * EWKNorm)
+            
+            if abs(lepeta)>=etaBinning[0] and abs(lepeta)<=etaBinning[1]:
                 if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_brl'], lepPt, lumiscale * MCcorr )
                 if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_brl'], lepPt, lumiscale * MCcorr)
-            if abs(lepeta)>=etaBinning[2]:
-                #if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
-                #if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr * EWKNorm)
+                
+            if abs(lepeta)>=etaBinning[2] and abs(lepeta)<=etaBinning[3]:
                 if getSel.looseNottight(lepid, lepOpt): Fill1D(histos['TLLepPt_den_ecp'], lepPt, lumiscale * MCcorr )
                 if getSel.loosepasstight(lepid, lepOpt): Fill1D(histos['TLLepPt_num_ecp'], lepPt, lumiscale * MCcorr)
+                
 
                 
     hfile.Write()
