@@ -3,7 +3,7 @@ import ROOT
 import types
 
 
-from RegSel_2 import RegSel
+from RegSel import RegSel
 
 sys.path.append('../')
 from Helper.HistInfo import HistInfo
