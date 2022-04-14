@@ -51,7 +51,7 @@ DataLumi=1.0
 
 if year==2016:
     samplelist = samples_2016
-    DataLumi = SampleChain.luminosity_2016
+    DataLumi = SampleChain.luminosity_2016_preVFP
      
 elif year==2017:
     samplelist = samples_2017
@@ -98,8 +98,8 @@ if isinstance(samplelist[samples][0], types.ListType):
 
         ch = SampleChain(sample, options.startfile, options.nfiles, year).getchain()
         print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-        #n_entries = ch.GetEntries()
-        n_entries = 1000
+        n_entries = ch.GetEntries()
+        #n_entries = 1000
         nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
         print 'Running over total events: ', nevtcut+1
         for ientry in range(n_entries):
@@ -107,6 +107,7 @@ if isinstance(samplelist[samples][0], types.ListType):
             if ientry % (nevtcut/10)==0 : print 'processing ', ientry,'th event'
             ch.GetEntry(ientry)
             getSel = RegSel(ch, isData, year)
+            getMC = MCWeight(ch, year,s)
             if not getSel.PreSelection(lepOpt): continue
             lepid = getSel.getLooseLep(lepOpt)['idx']
             if isData:
@@ -114,7 +115,7 @@ if isinstance(samplelist[samples][0], types.ListType):
                 MCcorr = 1.0          
             else:
                 lumiscale = (DataLumi) * ch.weight
-                MCcorr = MCWeight(ch, year,s).getTotalWeight()
+                MCcorr = getMC.getTotalWeight()
                 if lepOpt == 'Mu':
                     lep_promptflag = ord(ch.Muon_genPartFlav[lepid])
                     if lep_promptflag not in [ 1 , 15 ] : continue
@@ -128,22 +129,22 @@ if isinstance(samplelist[samples][0], types.ListType):
                 if not getSel.looseNottight(lepid, lepOpt) : continue
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
-                print lepPt , lepeta , MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta) , MCcorr
+                print lepPt , lepeta , getMC.getTLvalue(lepOpt , lepPt, lepeta) , MCcorr
                 Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr )
-                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta) )
+                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta) )
  
                 if getSel.SR1(lepOpt):
                     idx = findSR1BinIndex(getSel.calCT(1), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt'],getSel.getSortedLepVar()[0]['charg'])
                     print 'SR1_idx' ,idx , getSel.calCT(1) , getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['pt'] , getSel.getSortedLepVar()[0]['charg']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
                 if getSel.SR2(lepOpt):
                     idx = findSR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['pt']) + 22
                     print 'SR2_idx' ,idx , getSel.calCT(2), getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['pt']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
             if region == 'CR':
                 if not getSel.ControlRegion(lepOpt): continue
@@ -151,7 +152,7 @@ if isinstance(samplelist[samples][0], types.ListType):
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
                 Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr )
-                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta) )
+                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta) )
                 
                                                   
                 if getSel.CR1(lepOpt):
@@ -160,45 +161,45 @@ if isinstance(samplelist[samples][0], types.ListType):
                     print 'CR1_idx' ,idx , getSel.calCT(1), getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['charg']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
                 if getSel.CR2(lepOpt):
                     print 'hiiii CR2 pass'
-                    idx = findSR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt)) + 6
+                    idx = findCR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt)) + 6
                     print 'CR2_idx' ,idx , getSel.calCT(2), getSel.getLepMT(lepOpt)
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
             if region == 'SR+CR':
               if getSel.SearchRegion(lepOpt):
                 if not getSel.looseNottight(lepid, lepOpt) : continue
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
-                print lepPt , lepeta , MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta)
-                print lepPt , lepeta , MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta)
+                print lepPt , lepeta , getMC.getTLvalue(lepOpt , lepPt, lepeta)
+                print lepPt , lepeta , getMC.getTLvalue(lepOpt , lepPt, lepeta)
                 Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr )
-                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta) )
+                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta) )
 
                 if getSel.SR1(lepOpt):
                     idx = findSR1BinIndex(getSel.calCT(1), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt'],getSel.getSortedLepVar()[0]['charg'])
                     print 'SR1_idx' ,idx ,getSel.calCT(1), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt'],getSel.getSortedLepVar()[0]['charg'] 
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
                 if getSel.SR2(lepOpt):
                     idx = findSR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt']) + 22
                     print 'SR2_idx' ,idx , getSel.calCT(2), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
               if  getSel.ControlRegion(lepOpt):
                 if not getSel.looseNottight(lepid, lepOpt) : continue
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
                 Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr )
-                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta) ) 
+                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta) ) 
 
                 if getSel.CR1(lepOpt):
                     print 'hiiii CR1 pass' , getSel.getLooseLep(lepOpt)['pt']
@@ -206,15 +207,15 @@ if isinstance(samplelist[samples][0], types.ListType):
                     print 'CR1_idx' ,idx , getSel.calCT(1), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['charg']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
                 if getSel.CR2(lepOpt):
                     print 'hiiii CR2 pass', getSel.getLooseLep(lepOpt)['pt']
-                    idx = findSR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt)) + 6
+                    idx = findCR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt)) + 6
                     print 'CR2_idx' ,idx, getSel.calCT(2), getSel.getLepMT(lepOpt)
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,s).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
         hfile.Write()
 
@@ -236,8 +237,8 @@ else:
 
         ch = SampleChain(sample, options.startfile, options.nfiles, year).getchain()
         print 'Total events of selected files of the', sample, 'sample: ', ch.GetEntries()
-        #n_entries = ch.GetEntries()
-        n_entries = 1000
+        n_entries = ch.GetEntries()
+        #n_entries = 1000
         nevtcut = n_entries -1 if nEvents == - 1 else nEvents - 1
         print 'Running over total events: ', nevtcut+1
         for ientry in range(n_entries):
@@ -245,6 +246,7 @@ else:
             if ientry % (nevtcut/10)==0 : print 'processing ', ientry,'th event'
             ch.GetEntry(ientry)
             getSel = RegSel(ch, isData, year)
+            getMC = MCWeight(ch, year,sample)
             if not getSel.PreSelection(lepOpt): continue
             lepid = getSel.getLooseLep(lepOpt)['idx']
             if isData:
@@ -256,7 +258,7 @@ else:
                     count74 = count74 + 1
                     continue
                 #MCcorr = get_PU_weight_2(ch.Pileup_nTrueInt)
-                MCcorr = MCWeight(ch, year,sample).getTotalWeight()
+                MCcorr = getMC.getTotalWeight()
                 if lepOpt == 'Mu':
                     lep_promptflag = ord(ch.Muon_genPartFlav[lepid])
                     if lep_promptflag not in [ 1 , 15 ] : continue
@@ -271,21 +273,21 @@ else:
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
                 Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr )
-                Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
  
                 if getSel.SR1(lepOpt):
                     idx = findSR1BinIndex(getSel.calCT(1), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt'],getSel.getSortedLepVar()[0]['charg'])
                     print 'SR1_idx' ,idx , getSel.calCT(1) , getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['pt'] , getSel.getSortedLepVar()[0]['charg']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
                 if getSel.SR2(lepOpt):
                     idx = findSR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['pt']) + 22
                     print 'SR2_idx' ,idx , getSel.calCT(2), getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['pt']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
 
             if region == 'CR':
@@ -294,22 +296,22 @@ else:
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
                 Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr )
-                Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta)) 
+                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta)) 
                 if getSel.CR1(lepOpt):
                     print 'hiiii CR1 pass'
                     idx = findCR1BinIndex(getSel.calCT(1), getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['charg'])
                     print 'CR1_idx' ,idx , getSel.calCT(1), getSel.getLepMT(lepOpt) , getSel.getSortedLepVar()[0]['charg']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
                 if getSel.CR2(lepOpt):
                     print 'hiiii CR2 pass'
-                    idx = findSR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt)) + 6
+                    idx = findCR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt)) + 6
                     print 'CR2_idx' ,idx , getSel.calCT(2), getSel.getLepMT(lepOpt)
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
             if region == 'SR+CR':
               if getSel.SearchRegion(lepOpt):
@@ -317,21 +319,21 @@ else:
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
                 Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr )
-                Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
                 if getSel.SR1(lepOpt):
                     idx = findSR1BinIndex(getSel.calCT(1), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt'],getSel.getSortedLepVar()[0]['charg'])
                     print 'SR1_idx' ,idx ,getSel.calCT(1), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt'],getSel.getSortedLepVar()[0]['charg'] 
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
                 if getSel.SR2(lepOpt):
                     idx = findSR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt']) + 22
                     print 'SR2_idx' ,idx , getSel.calCT(2), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['pt']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
 
               if  getSel.ControlRegion(lepOpt):
@@ -339,7 +341,7 @@ else:
                 lepPt = getSel.getLooseLep(lepOpt)['pt']
                 lepeta = getSel.getLooseLep(lepOpt)['eta']
                 Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr )
-                Fill1D(histos['NF_AppReg_all'], 1, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                Fill1D(histos['NF_SearReg_all'], 1, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
                 if getSel.CR1(lepOpt):
                     print 'hiiii CR1 pass' , getSel.getLooseLep(lepOpt)['pt']
@@ -347,14 +349,14 @@ else:
                     print 'CR1_idx' ,idx , getSel.calCT(1), getSel.getLepMT(lepOpt), getSel.getSortedLepVar()[0]['charg']
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
 
                 if getSel.CR2(lepOpt):
                     print 'hiiii CR2 pass', getSel.getLooseLep(lepOpt)['pt']
-                    idx = findSR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt)) + 6
+                    idx = findCR2BinIndex(getSel.calCT(2), getSel.getLepMT(lepOpt)) + 6
                     print 'CR2_idx' ,idx, getSel.calCT(2), getSel.getLepMT(lepOpt)
                     if not idx == -1:
                         Fill1D(histos['NF_AppReg_perBin'],idx, lumiscale * MCcorr)
-                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * MCWeight(ch, year,sample).getTLvalue(lepOpt , lepPt, lepeta))
+                        Fill1D(histos['NF_SearReg_perBin'],idx, lumiscale * MCcorr * getMC.getTLvalue(lepOpt , lepPt, lepeta))
         hfile.Write()
 
