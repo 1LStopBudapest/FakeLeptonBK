@@ -31,7 +31,7 @@ class RegSel():
         return cut
     
     def MsrMTcut(self, lep):
-        MT = self.getMuMT('Loose') if lep=='Mu' else self.getLooseEleMT('Loose')
+        MT = self.getMuMT('Loose') if lep=='Mu' else self.getEleMT('Loose')
         return MT<40   # return true if mt < 40 and false if mt>=40 it was 30
         
     def Msrlepcut(self, lep):
