@@ -8,6 +8,7 @@ from Sample.SampleChain import SampleChain
 from Sample.Dir import plotDir
 from Helper.PlotHelper import *
 from Helper.Style import *
+from Sample.Dir import Xfiles
 
 import numpy as np
 
@@ -110,7 +111,9 @@ if doplots:
     Plot1D(hRatio_e, outputDir, drawOption="text")
 
 print hRatio_e.GetBinContent(3)
-TLfile = ROOT.TFile('/home/mmoussa/susy/susy_code_fake_rate/AuxFiles/h_TLratio_2D_'+lepOpt+'.root', 'RECREATE')
+tlfname = 'h_TLratio_2D_'+lepOpt+'.root'
+tlf = os.path.join(Xfiles, tlfname)
+TLfile = ROOT.TFile(tlf, 'RECREATE')
 pt_Binning = [3.5, 5.0, 8, 10, 15, 20, 30, 50]
 eta_Binning = [0.,1.442,1.566,3.142] 
 h_TLratio_2D = ROOT.TH2D('h_TLratio_2D' , 'Tight to Loose ratio ; P_{T} [GeV] ; #eta' , len(pt_Binning)-1 , np.array(pt_Binning) , len(eta_Binning)-1 , np.array(eta_Binning))
